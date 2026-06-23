@@ -101,11 +101,788 @@
     </div>
   </section>
 
+  <!-- ========== WIDGETS SECTION ========== -->
+  <section data-bs-version="5.1" class="widgets-section" id="widgets-section">
+    <style>
+      .widgets-section {
+        background: linear-gradient(180deg, #f8fbff 0%, #f1faf6 100%);
+        padding: 60px 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .widgets-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at 22% 42%, rgba(59, 130, 246, 0.12) 0%, transparent 36%),
+                    radial-gradient(circle at 78% 55%, rgba(16, 185, 129, 0.12) 0%, transparent 40%);
+        animation: widgetBgPulse 8s ease-in-out infinite alternate;
+        pointer-events: none;
+      }
+      @keyframes widgetBgPulse {
+        0% { transform: scale(1) rotate(0deg); }
+        100% { transform: scale(1.05) rotate(2deg); }
+      }
+      .widgets-section .section-title {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 1;
+      }
+      .widgets-section .section-title h2 {
+        font-family: 'Inter', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #102033;
+        margin-bottom: 8px;
+        letter-spacing: 0;
+      }
+      .widgets-section .section-title p {
+        font-family: 'Inter', sans-serif;
+        color: #5d6b7a;
+        font-size: 0.95rem;
+      }
+      .widgets-row {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 15px;
+      }
+      .widget-card {
+        flex: 1 1 300px;
+        min-width: 0;
+        max-width: 420px;
+        box-sizing: border-box;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid #dbe6ef;
+        border-radius: 8px;
+        padding: 28px;
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1), border-color 0.3s;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(15, 35, 55, 0.1);
+      }
+      .widget-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 45px rgba(15, 35, 55, 0.16);
+        border-color: #b7c9da;
+      }
+      .widget-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 8px 8px 0 0;
+      }
+      .widget-currency::after {
+        background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
+      }
+      .widget-weather::after {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd);
+      }
+      .widget-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .widget-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+        border-radius: 8px;
+      }
+      .widget-currency .widget-icon {
+        background: linear-gradient(135deg, #d1fae5, #ecfdf5);
+        color: #047857;
+      }
+      .widget-weather .widget-icon {
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        color: #2563eb;
+      }
+      .widget-header h3 {
+        font-family: 'Inter', sans-serif;
+        color: #102033;
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: 0;
+        flex: 1;
+        min-width: 0;
+      }
+      .widget-header .widget-badge {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .widget-currency .widget-badge {
+        background: #dcfce7;
+        border: 1px solid #bbf7d0;
+        color: #047857;
+      }
+      .widget-weather .widget-badge {
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+        color: #2563eb;
+      }
+
+      /* Currency Widget */
+      .currency-input-group {
+        position: relative;
+        margin-bottom: 16px;
+      }
+      .currency-input-group label {
+        font-family: 'Inter', sans-serif;
+        display: block;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+      }
+      .currency-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #d7e2ec;
+        border-radius: 8px;
+        padding: 0 14px;
+        transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+      }
+      .currency-input-wrapper:focus-within {
+        border-color: #10b981;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
+      }
+      .currency-select {
+        font-family: 'Inter', sans-serif;
+        width: 78px;
+        flex-shrink: 0;
+        margin-right: 14px;
+        padding: 12px 22px 12px 0;
+        background-color: transparent;
+        border: none;
+        color: #047857;
+        font-size: 0.9rem;
+        font-weight: 800;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23047857' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 4px center;
+      }
+      .currency-select option {
+        background: #ffffff;
+        color: #102033;
+      }
+      .currency-input-wrapper input {
+        font-family: 'Inter', sans-serif;
+        background: none;
+        border: none;
+        border-left: 1px solid #d7e2ec;
+        color: #102033;
+        font-size: 1.25rem;
+        font-weight: 600;
+        padding: 12px 0 12px 14px;
+        width: 100%;
+        outline: none;
+      }
+      .currency-input-wrapper input::placeholder {
+        color: #94a3b8;
+      }
+      .currency-rate-info {
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+      }
+      .currency-rate-info .rate {
+        color: #475569;
+        font-size: 0.8rem;
+      }
+      .currency-rate-info .rate strong {
+        color: #059669;
+      }
+      .currency-rate-info .last-update {
+        color: #7c8a99;
+        font-size: 0.7rem;
+      }
+
+      /* Weather Widget */
+      .weather-loading, .weather-error {
+        font-family: 'Inter', sans-serif;
+        text-align: center;
+        color: #64748b;
+        padding: 30px 0;
+        font-size: 0.9rem;
+      }
+      .weather-error { color: #dc2626; }
+      .weather-content { display: none; }
+      .weather-content.active { display: block; }
+      .weather-city-selector {
+        margin-bottom: 18px;
+      }
+      .weather-city-selector select {
+        font-family: 'Inter', sans-serif;
+        width: 100%;
+        background-color: #f8fafc;
+        border: 1px solid #d7e2ec;
+        border-radius: 8px;
+        color: #102033;
+        padding: 10px 14px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.25s;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2360a5fa' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+      }
+      .weather-city-selector select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+      }
+      .weather-city-selector select option {
+        background: #ffffff;
+        color: #102033;
+      }
+      .weather-main {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+      .weather-temp-icon {
+        text-align: center;
+      }
+      .weather-emoji {
+        font-size: 3rem;
+        line-height: 1;
+        display: block;
+        margin-bottom: 2px;
+        animation: weatherFloat 3s ease-in-out infinite;
+      }
+      @keyframes weatherFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      .weather-temp {
+        font-family: 'Inter', sans-serif;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #102033;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+      .weather-temp .unit {
+        font-size: 1.1rem;
+        font-weight: 400;
+        color: #64748b;
+        margin-left: 2px;
+      }
+      .weather-desc {
+        font-family: 'Inter', sans-serif;
+        color: #566676;
+        font-size: 0.88rem;
+        margin-top: 2px;
+        text-transform: capitalize;
+      }
+      .weather-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      .weather-detail-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        transition: background 0.25s, border-color 0.25s;
+      }
+      .weather-detail-item:hover {
+        background: #eef6ff;
+        border-color: #bfdbfe;
+      }
+      .weather-detail-item .detail-icon {
+        font-size: 1rem;
+        margin-bottom: 3px;
+        display: block;
+      }
+      .weather-detail-item .detail-value {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #102033;
+        display: block;
+      }
+      .weather-detail-item .detail-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.65rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-top: 2px;
+      }
+
+      @media (max-width: 680px) {
+        .widgets-row {
+          flex-direction: column;
+          align-items: center;
+        }
+        .widget-card {
+          max-width: 100%;
+          width: 100%;
+        }
+      }
+    </style>
+
+    <div class="section-title">
+      <h2>Herramientas Útiles</h2>
+      <p>Información en tiempo real para nuestros miembros</p>
+    </div>
+
+    <div class="widgets-row">
+      <!-- Currency Converter Widget -->
+      <div class="widget-card widget-currency" id="currency-widget">
+        <div class="widget-header">
+          <div class="widget-icon">💱</div>
+          <h3>Conversor de Moneda</h3>
+          <span class="widget-badge">EN VIVO</span>
+        </div>
+
+        <div class="currency-input-group">
+          <label id="from-currency-label">Pesos Colombianos</label>
+          <div class="currency-input-wrapper">
+            <select class="currency-select" id="from-currency" aria-label="Moneda de origen">
+              <option value="COP" selected>COP</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="MXN">MXN</option>
+              <option value="BRL">BRL</option>
+              <option value="ARS">ARS</option>
+              <option value="CLP">CLP</option>
+              <option value="PEN">PEN</option>
+            </select>
+            <input type="number" id="cop-input" placeholder="0" min="0" value="100000">
+          </div>
+        </div>
+
+        <div class="currency-input-group">
+          <label id="to-currency-label">Dólares Estadounidenses</label>
+          <div class="currency-input-wrapper">
+            <select class="currency-select" id="to-currency" aria-label="Moneda de destino">
+              <option value="COP">COP</option>
+              <option value="USD" selected>USD</option>
+              <option value="EUR">EUR</option>
+              <option value="MXN">MXN</option>
+              <option value="BRL">BRL</option>
+              <option value="ARS">ARS</option>
+              <option value="CLP">CLP</option>
+              <option value="PEN">PEN</option>
+            </select>
+            <input type="number" id="usd-input" placeholder="0" min="0">
+          </div>
+        </div>
+
+        <div class="currency-rate-info">
+          <span class="rate" id="rate-display">Cargando tasa...</span>
+          <span class="last-update" id="rate-update"></span>
+        </div>
+      </div>
+
+      <!-- Weather Widget -->
+      <div class="widget-card widget-weather" id="weather-widget">
+        <div class="widget-header">
+          <div class="widget-icon">🌤️</div>
+          <h3>Clima Actual</h3>
+          <span class="widget-badge">TIEMPO REAL</span>
+        </div>
+
+        <div class="weather-city-selector">
+          <select id="city-selector">
+            <option value="auto">📍 Mi ubicación actual</option>
+            <option value="7.8836,-76.6259">Apartadó</option>
+            <option value="7.0847,-70.7591">Arauca</option>
+            <option value="4.5339,-75.6811">Armenia</option>
+            <option value="7.0653,-73.8547">Barrancabermeja</option>
+            <option value="10.9639,-74.7964">Barranquilla</option>
+            <option value="6.3373,-75.5579">Bello</option>
+            <option value="4.6097,-74.0817">Bogotá</option>
+            <option value="7.1254,-73.1198">Bucaramanga</option>
+            <option value="3.8801,-77.0312">Buenaventura</option>
+            <option value="3.9009,-76.2978">Buga</option>
+            <option value="3.4516,-76.5320">Cali</option>
+            <option value="10.3910,-75.5144">Cartagena</option>
+            <option value="4.7464,-75.9117">Cartago</option>
+            <option value="7.9865,-75.1935">Caucasia</option>
+            <option value="4.8588,-74.0587">Chía</option>
+            <option value="11.0070,-74.2477">Ciénaga</option>
+            <option value="7.8891,-72.4967">Cúcuta</option>
+            <option value="5.8269,-73.0203">Duitama</option>
+            <option value="6.1719,-75.5833">Envigado</option>
+            <option value="1.6144,-75.6062">Florencia</option>
+            <option value="4.3365,-74.3638">Fusagasugá</option>
+            <option value="4.3420,-74.3640">Girardot</option>
+            <option value="4.4389,-75.2322">Ibagué</option>
+            <option value="3.8653,-67.9239">Inírida</option>
+            <option value="0.8302,-77.6444">Ipiales</option>
+            <option value="-4.2153,-69.9406">Leticia</option>
+            <option value="9.2365,-75.8135">Lorica</option>
+            <option value="9.2420,-74.7547">Magangué</option>
+            <option value="11.3832,-72.2432">Maicao</option>
+            <option value="5.0703,-75.5138">Manizales</option>
+            <option value="6.2518,-75.5636">Medellín</option>
+            <option value="1.1983,-70.1733">Mitú</option>
+            <option value="1.1471,-76.6473">Mocoa</option>
+            <option value="8.7480,-75.8814">Montería</option>
+            <option value="2.9273,-75.2819">Neiva</option>
+            <option value="8.2377,-73.3560">Ocaña</option>
+            <option value="3.5394,-76.3036">Palmira</option>
+            <option value="1.2136,-77.2811">Pasto</option>
+            <option value="4.8133,-75.6961">Pereira</option>
+            <option value="2.4448,-76.6147">Popayán</option>
+            <option value="0.5133,-76.5007">Puerto Asís</option>
+            <option value="6.1848,-67.4930">Puerto Carreño</option>
+            <option value="5.6947,-76.6611">Quibdó</option>
+            <option value="11.5444,-72.9072">Riohacha</option>
+            <option value="6.1552,-75.3737">Rionegro</option>
+            <option value="12.5847,-81.7006">San Andrés</option>
+            <option value="2.5729,-72.6459">San José del Guaviare</option>
+            <option value="11.2408,-74.1990">Santa Marta</option>
+            <option value="9.3047,-75.3978">Sincelejo</option>
+            <option value="4.5794,-74.2168">Soacha</option>
+            <option value="5.7143,-72.9339">Sogamoso</option>
+            <option value="4.0847,-76.1954">Tuluá</option>
+            <option value="1.7986,-78.8156">Tumaco</option>
+            <option value="5.5353,-73.3678">Tunja</option>
+            <option value="8.0926,-76.7282">Turbo</option>
+            <option value="10.4631,-73.2532">Valledupar</option>
+            <option value="4.1420,-73.6266">Villavicencio</option>
+            <option value="5.3378,-72.3959">Yopal</option>
+          </select>
+        </div>
+
+        <div class="weather-loading" id="weather-loading">
+          <span style="font-size:1.5rem;">⏳</span><br>Obteniendo clima...
+        </div>
+        <div class="weather-error" id="weather-error" style="display:none;"></div>
+
+        <div class="weather-content" id="weather-content">
+          <div class="weather-main">
+            <div class="weather-temp-icon">
+              <span class="weather-emoji" id="weather-emoji">☀️</span>
+            </div>
+            <div>
+              <div class="weather-temp"><span id="weather-temp-value">--</span><span class="unit">°C</span></div>
+              <div class="weather-desc" id="weather-desc">--</div>
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="weather-detail-item">
+              <span class="detail-icon">💧</span>
+              <span class="detail-value" id="weather-humidity">--%</span>
+              <span class="detail-label">Humedad</span>
+            </div>
+            <div class="weather-detail-item">
+              <span class="detail-icon">💨</span>
+              <span class="detail-value" id="weather-wind">-- km/h</span>
+              <span class="detail-label">Viento</span>
+            </div>
+            <div class="weather-detail-item">
+              <span class="detail-icon">🌡️</span>
+              <span class="detail-value" id="weather-feels">--°</span>
+              <span class="detail-label">Sensación</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ========== END WIDGETS SECTION ========== -->
+
+  <script>
+    // ==========================================
+    // CURRENCY CONVERTER (ExchangeRate-API Open)
+    // ==========================================
+    (function() {
+      const fromInput = document.getElementById('cop-input');
+      const toInput = document.getElementById('usd-input');
+      const fromSelect = document.getElementById('from-currency');
+      const toSelect = document.getElementById('to-currency');
+      const fromLabel = document.getElementById('from-currency-label');
+      const toLabel = document.getElementById('to-currency-label');
+      const rateDisplay = document.getElementById('rate-display');
+      const rateUpdate = document.getElementById('rate-update');
+      const currencies = {
+        COP: { label: 'Pesos Colombianos', decimals: 0 },
+        USD: { label: 'Dólares Estadounidenses', decimals: 2 },
+        EUR: { label: 'Euros', decimals: 2 },
+        MXN: { label: 'Pesos Mexicanos', decimals: 2 },
+        BRL: { label: 'Reales Brasileños', decimals: 2 },
+        ARS: { label: 'Pesos Argentinos', decimals: 2 },
+        CLP: { label: 'Pesos Chilenos', decimals: 0 },
+        PEN: { label: 'Soles Peruanos', decimals: 2 }
+      };
+      let rates = { USD: 1 };
+      let lastEdited = 'from';
+
+      function getCurrencyInfo(code) {
+        return currencies[code] || { label: code, decimals: 2 };
+      }
+
+      function convertAmount(amount, fromCurrency, toCurrency) {
+        if (!rates[fromCurrency] || !rates[toCurrency]) return null;
+        return (amount / rates[fromCurrency]) * rates[toCurrency];
+      }
+
+      function formatInputValue(value, currency) {
+        if (value === null || !Number.isFinite(value)) return '';
+        const decimals = getCurrencyInfo(currency).decimals;
+        return decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals);
+      }
+
+      function formatRateValue(value, currency) {
+        if (value === null || !Number.isFinite(value)) return '--';
+        return value.toLocaleString('es-CO', {
+          minimumFractionDigits: getCurrencyInfo(currency).decimals,
+          maximumFractionDigits: getCurrencyInfo(currency).decimals
+        });
+      }
+
+      function updateCurrencyLabels() {
+        fromLabel.textContent = getCurrencyInfo(fromSelect.value).label;
+        toLabel.textContent = getCurrencyInfo(toSelect.value).label;
+      }
+
+      function updateRateInfo() {
+        const fromCurrency = fromSelect.value;
+        const toCurrency = toSelect.value;
+        const currentRate = convertAmount(1, fromCurrency, toCurrency);
+
+        if (currentRate === null) {
+          rateDisplay.textContent = 'Cargando tasa...';
+          return;
+        }
+
+        rateDisplay.innerHTML = '1 ' + fromCurrency + ' = <strong>' + formatRateValue(currentRate, toCurrency) + ' ' + toCurrency + '</strong>';
+      }
+
+      function convertFromSource() {
+        const amount = parseFloat(fromInput.value) || 0;
+        const converted = convertAmount(amount, fromSelect.value, toSelect.value);
+        toInput.value = formatInputValue(converted, toSelect.value);
+        updateRateInfo();
+      }
+
+      function convertFromTarget() {
+        const amount = parseFloat(toInput.value) || 0;
+        const converted = convertAmount(amount, toSelect.value, fromSelect.value);
+        fromInput.value = formatInputValue(converted, fromSelect.value);
+        updateRateInfo();
+      }
+
+      function updateSelectedCurrencies() {
+        updateCurrencyLabels();
+        if (lastEdited === 'to') {
+          convertFromTarget();
+        } else {
+          convertFromSource();
+        }
+      }
+
+      async function fetchRate() {
+        try {
+          const res = await fetch('https://open.er-api.com/v6/latest/USD');
+          const data = await res.json();
+          if (data && data.rates) {
+            rates = Object.assign({ USD: 1 }, data.rates);
+            const now = new Date();
+            rateUpdate.textContent = 'Actualizado: ' + now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+            updateSelectedCurrencies();
+          }
+        } catch(e) {
+          rateDisplay.textContent = 'Error al cargar tasa';
+          rateUpdate.textContent = '';
+        }
+      }
+
+      fromInput.addEventListener('input', function() {
+        lastEdited = 'from';
+        convertFromSource();
+      });
+
+      toInput.addEventListener('input', function() {
+        lastEdited = 'to';
+        convertFromTarget();
+      });
+
+      fromSelect.addEventListener('change', updateSelectedCurrencies);
+      toSelect.addEventListener('change', updateSelectedCurrencies);
+
+      updateCurrencyLabels();
+      fetchRate();
+    })();
+
+    // ==========================================
+    // WEATHER WIDGET (Open-Meteo, no API key)
+    // ==========================================
+    (function() {
+      const citySelector = document.getElementById('city-selector');
+      const loadingEl = document.getElementById('weather-loading');
+      const errorEl = document.getElementById('weather-error');
+      const contentEl = document.getElementById('weather-content');
+      const tempEl = document.getElementById('weather-temp-value');
+      const descEl = document.getElementById('weather-desc');
+      const emojiEl = document.getElementById('weather-emoji');
+      const humidityEl = document.getElementById('weather-humidity');
+      const windEl = document.getElementById('weather-wind');
+      const feelsEl = document.getElementById('weather-feels');
+
+      // WMO Weather interpretation codes → emoji + description
+      const weatherCodes = {
+        0: ['☀️', 'Despejado'],
+        1: ['🌤️', 'Mayormente despejado'],
+        2: ['⛅', 'Parcialmente nublado'],
+        3: ['☁️', 'Nublado'],
+        45: ['🌫️', 'Niebla'],
+        48: ['🌫️', 'Niebla helada'],
+        51: ['🌦️', 'Llovizna ligera'],
+        53: ['🌦️', 'Llovizna moderada'],
+        55: ['🌧️', 'Llovizna intensa'],
+        56: ['🌧️', 'Llovizna helada ligera'],
+        57: ['🌧️', 'Llovizna helada intensa'],
+        61: ['🌧️', 'Lluvia ligera'],
+        63: ['🌧️', 'Lluvia moderada'],
+        65: ['🌧️', 'Lluvia intensa'],
+        66: ['🌧️', 'Lluvia helada ligera'],
+        67: ['🌧️', 'Lluvia helada intensa'],
+        71: ['🌨️', 'Nevada ligera'],
+        73: ['🌨️', 'Nevada moderada'],
+        75: ['❄️', 'Nevada intensa'],
+        77: ['❄️', 'Granizo'],
+        80: ['🌦️', 'Chubascos ligeros'],
+        81: ['🌧️', 'Chubascos moderados'],
+        82: ['⛈️', 'Chubascos intensos'],
+        85: ['🌨️', 'Nevada ligera'],
+        86: ['❄️', 'Nevada intensa'],
+        95: ['⛈️', 'Tormenta eléctrica'],
+        96: ['⛈️', 'Tormenta con granizo ligero'],
+        99: ['⛈️', 'Tormenta con granizo intenso']
+      };
+
+      function showLoading() {
+        loadingEl.style.display = 'block';
+        errorEl.style.display = 'none';
+        contentEl.classList.remove('active');
+      }
+
+      function showError(msg) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = msg;
+        contentEl.classList.remove('active');
+      }
+
+      function showContent() {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        contentEl.classList.add('active');
+      }
+
+      async function fetchWeather(lat, lon) {
+        showLoading();
+        try {
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`;
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (data && data.current) {
+            const c = data.current;
+            const code = c.weather_code;
+            const [emoji, desc] = weatherCodes[code] || ['🌡️', 'Desconocido'];
+
+            tempEl.textContent = Math.round(c.temperature_2m);
+            descEl.textContent = desc;
+            emojiEl.textContent = emoji;
+            humidityEl.textContent = c.relative_humidity_2m + '%';
+            windEl.textContent = Math.round(c.wind_speed_10m) + ' km/h';
+            feelsEl.textContent = Math.round(c.apparent_temperature) + '°';
+
+            showContent();
+          } else {
+            showError('No se pudo obtener el clima');
+          }
+        } catch(e) {
+          showError('Error de conexión');
+        }
+      }
+
+      function loadWeather() {
+        const val = citySelector.value;
+        if (val === 'auto') {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                fetchWeather(pos.coords.latitude, pos.coords.longitude);
+              },
+              function() {
+                // Fallback: Bogotá
+                fetchWeather(4.6097, -74.0817);
+                citySelector.value = '4.6097,-74.0817';
+              },
+              { timeout: 8000 }
+            );
+          } else {
+            fetchWeather(4.6097, -74.0817);
+            citySelector.value = '4.6097,-74.0817';
+          }
+        } else {
+          const [lat, lon] = val.split(',');
+          fetchWeather(parseFloat(lat), parseFloat(lon));
+        }
+      }
+
+      citySelector.addEventListener('change', loadWeather);
+      loadWeather();
+    })();
+  </script>
+
+
   <section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
-
-
-
-
 
     <div class="container">
       <div class="row">
