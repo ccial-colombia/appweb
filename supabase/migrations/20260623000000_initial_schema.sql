@@ -12,7 +12,7 @@ end $$;
 
 do $$
 begin
-    create type public.course_category as enum ('course', 'workshop', 'event');
+    create type public.course_category as enum ('curso', 'taller', 'eventos');
 exception
     when duplicate_object then null;
 end $$;
@@ -118,7 +118,7 @@ create table if not exists public.courses (
     subtitle text,
     description text,
     image_url text,
-    category public.course_category not null default 'course',
+    category public.course_category not null default 'curso',
     display_order integer not null default 0,
     is_active boolean not null default true,
     created_at timestamptz not null default now(),
@@ -661,9 +661,32 @@ set
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+--alter table storage.objects enable row level security;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values
+    (
+        'media',
+        'media',
+        false,
+        5242880,
+        array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+    ),
+    (
+        'avatars',
+        'avatars',
+        true,
+        2097152,
+        array['image/jpeg', 'image/png', 'image/webp']
+    )
+on conflict (id) do update
+set
+    name = excluded.name,
+    public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "media_read_authenticated" on storage.objects;
+
 create policy "media_read_authenticated"
     on storage.objects for select
     to authenticated

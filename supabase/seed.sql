@@ -50,7 +50,8 @@ values
         'campatienda.html',
         true,
         true
-    ),
+    )
+    /*,
     (
         'enciclopedia',
         'Enciclopedia de Juegos',
@@ -74,7 +75,7 @@ values
         'valores.html',
         false,
         true
-    )
+    )*/
 on conflict (slug) do update
 set
     title = excluded.title,
@@ -91,10 +92,11 @@ values
     ('Equipados', '/equipados', false, 2, true),
     ('Exclusivo', '/exclusivo', false, 3, true),
     ('Comunidad', '/comunidad', false, 4, true),
-    ('CampaTienda', '/campatienda', false, 5, true),
+    ('CampaTienda', '/campatienda', false, 5, true)
+    /*,
     ('Valores', '/valores', false, 6, false),
     ('Normas', '/normas', false, 7, false),
-    ('Enciclopedia', '/enciclopedia', false, 8, false)
+    ('Enciclopedia', '/enciclopedia', false, 8, false)*/
 on conflict (label, url) do update
 set
     is_external = excluded.is_external,
@@ -344,7 +346,7 @@ values
         'Curso base y puerta de entrada al proceso formativo de CCI AL.',
         'Este curso prepara a los participantes para servir como confidentes, entendiendo que nadie puede dar a otros lo que no ha trabajado primero en su propia vida.',
         'assets/images/construyendo20relaciones-695x899.png',
-        'course',
+        'curso',
         0,
         true
     ),
@@ -353,7 +355,7 @@ values
         'Este curso equipa a lideres para facilitar el aprendizaje a traves de la experiencia y la reflexion guiada.',
         'Usa el Ciclo de Kolb de aprendizaje experiencial para elegir actividades que fortalecen el trabajo en equipo, cuidar la seguridad y guiar al grupo a reflexionar.',
         'assets/images/facilitando20acertijos-695x899.png',
-        'course',
+        'curso',
         1,
         true
     ),
@@ -362,7 +364,7 @@ values
         'Este curso forma lideres que acompanan procesos de crecimiento espiritual de manera intencional.',
         'Aprendemos a facilitar el crecimiento a traves de la consejeria biblica, la disciplina inductiva y el aprendizaje experiencial.',
         'assets/images/facilitando20crecimiento-695x899.png',
-        'course',
+        'curso',
         2,
         true
     ),
@@ -371,7 +373,7 @@ values
         'Este curso equipa lideres para disenar experiencias de campamento que conectan recreacion, comunidad y el mensaje de Cristo.',
         'A traves de un proceso de 12 pasos, aprendemos a crear programas intencionales y contextualizados.',
         'assets/images/programando20campamentos-695x899.png',
-        'course',
+        'curso',
         3,
         true
     ),
@@ -380,7 +382,7 @@ values
         'Este curso forma lideres con pensamiento biblico, capaces de crear EBC que guian a otros a observar, interpretar y aplicar la Palabra de Dios.',
         'Los Encuentros Biblicos en Comunidad crean espacios donde la Biblia se vive en comunidad.',
         'assets/images/creando20encuentros20biblicos20en20comunidad-695x899.png',
-        'course',
+        'curso',
         4,
         true
     ),
@@ -389,7 +391,7 @@ values
         null,
         'Aprendemos como funciona el cerebro para ensenar y aprender de manera mas efectiva.',
         'assets/images/portada-dpc-297x385.jpg',
-        'workshop',
+        'taller',
         0,
         true
     ),
@@ -398,7 +400,7 @@ values
         null,
         'Descubrimos como nuestras diferencias fortalecen el trabajo en equipo cuando hay unidad.',
         'assets/images/portada-dpc-297x385.jpg',
-        'workshop',
+        'taller',
         1,
         true
     ),
@@ -407,7 +409,7 @@ values
         null,
         'La recreacion con proposito ensena valores y crea ambientes de aprendizaje y comunidad.',
         'assets/images/portada-dpc-297x385.jpg',
-        'workshop',
+        'taller',
         2,
         true
     ),
@@ -416,7 +418,7 @@ values
         null,
         'Una forma creativa y profunda de ensenar la Palabra de Dios conectando mente, corazon y accion.',
         'assets/images/portada-dpc-297x385.jpg',
-        'workshop',
+        'taller',
         3,
         true
     ),
@@ -425,7 +427,7 @@ values
         null,
         'Encuentro virtual para miembros de CCI AL Colombia.',
         'assets/images/zoom-1-300x168.jpeg',
-        'event',
+        'eventos',
         0,
         true
     ),
@@ -434,7 +436,7 @@ values
         null,
         'Taller exclusivo para fortalecer la comunion y el aprendizaje de miembros.',
         'assets/images/taller20exclusivo-712x475.jpeg',
-        'event',
+        'eventos',
         1,
         true
     ),
@@ -443,7 +445,7 @@ values
         null,
         'Encuentro nacional para miembros de CCI AL Colombia.',
         'assets/images/encuentro-1-712x949.jpeg',
-        'event',
+        'eventos',
         2,
         true
     )
