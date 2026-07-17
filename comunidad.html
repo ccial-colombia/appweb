@@ -41,6 +41,12 @@
 
 <body>
 
+  <script>
+    if (sessionStorage.getItem("auth") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+
 	<section data-bs-version="5.1" class="menu menu3 cid-sFAA5oUu2Y" once="menu" id="menu3-1v">
 
 		<nav class="navbar navbar-dropdown navbar-fixed-top navbar-expand-lg">
