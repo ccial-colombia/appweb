@@ -944,55 +944,34 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    const supabaseClient = supabase.createClient(
+      "https://gmcuzmsckwtdvurboobh.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
+    );
+
     function mostrarLogin() {
       document.getElementById("loginModal").style.display = "flex";
       document.getElementById("password").focus();
     }
 
-    // Obtiene la contraseña vigente desde psw_change.csv:
-    // la fila con la Fecha (AAAAMMDD) más reciente que no sea futura.
-    async function obtenerPasswordVigente() {
-      const respuesta = await fetch("psw_change.csv", { cache: "no-store" });
-      if (!respuesta.ok) throw new Error("No se pudo leer psw_change.csv");
-      const texto = await respuesta.text();
-
-      const hoy = new Date();
-      const fechaHoy = hoy.getFullYear() * 10000 + (hoy.getMonth() + 1) * 100 + hoy.getDate();
-
-      let mejorFecha = 0;
-      let passwordVigente = null;
-
-      const lineas = texto.split(/\r?\n/).slice(1); // omite encabezado
-      for (const linea of lineas) {
-        const campos = linea.split(",");
-        if (campos.length < 3) continue;
-        const fecha = parseInt(campos[1].trim(), 10);
-        const contrasenia = campos[2].trim();
-        if (!isNaN(fecha) && contrasenia && fecha <= fechaHoy && fecha >= mejorFecha) {
-          mejorFecha = fecha;
-          passwordVigente = contrasenia;
-        }
-      }
-
-      if (!passwordVigente) throw new Error("Sin contraseña vigente en el CSV");
-      return passwordVigente;
-    }
-
+    // Valida contra la base de datos: la función validar_password compara con la
+    // contraseña vigente (fecha más reciente no futura) sin exponerla al navegador.
     async function validar() {
       const pass = document.getElementById("password").value;
       const error = document.getElementById("error");
 
-      try {
-        const passwordCorrecta = await obtenerPasswordVigente();
-        if (pass === passwordCorrecta) {
-          sessionStorage.setItem("auth", "true");
-          window.location.href = "inicio.html";
-          return;
-        }
-        error.textContent = "Contraseña incorrecta";
-      } catch (e) {
+      const { data, error: err } = await supabaseClient.rpc("validar_password", { pass: pass });
+
+      if (err) {
         error.textContent = "No se pudo verificar la contraseña. Intenta de nuevo.";
+      } else if (data === true) {
+        sessionStorage.setItem("auth", "true");
+        window.location.href = "inicio.html";
+        return;
+      } else {
+        error.textContent = "Contraseña incorrecta";
       }
       error.style.display = "block";
     }
