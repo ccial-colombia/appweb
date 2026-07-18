@@ -389,6 +389,94 @@
 	<script src="assets/imagesloaded/imagesloaded.pkgd.min.js"></script>
 	<script src="assets/theme/js/script.js"></script>
 
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script>
+		// Carga el contenido de la página desde la base de datos en Supabase.
+		const supabaseClient = supabase.createClient(
+			"https://gmcuzmsckwtdvurboobh.supabase.co",
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
+		);
+
+		function escaparHtml(texto) {
+			const div = document.createElement("div");
+			div.textContent = texto == null ? "" : String(texto);
+			return div.innerHTML;
+		}
+
+		// Convierte el contacto en enlace si es correo o URL.
+		function formatearContacto(contacto) {
+			if (!contacto) return "";
+			const texto = escaparHtml(contacto);
+			if (contacto.includes("@") && !contacto.includes(" ")) {
+				return '<a href="mailto:' + texto + '">' + texto + '</a>';
+			}
+			if (/^https?:\/\//i.test(contacto)) {
+				return '<a href="' + texto + '" target="_blank" rel="noopener">' + texto + '</a>';
+			}
+			return texto;
+		}
+
+		async function cargarTabla(tabla, tbodyId) {
+			const tbody = document.getElementById(tbodyId);
+			if (!tbody) return;
+
+			const { data, error } = await supabaseClient
+				.from(tabla)
+				.select("nombre, lugar, contacto")
+				.eq("visible", true)
+				.order("orden", { ascending: true });
+
+			if (error) {
+				tbody.innerHTML = '<tr><td colspan="3" class="text-center">No se pudo cargar la información.</td></tr>';
+				return;
+			}
+			if (!data || data.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="3" class="text-center">Aún no hay información registrada.</td></tr>';
+				return;
+			}
+			tbody.innerHTML = data.map(function (fila) {
+				return "<tr>" +
+					"<td>" + escaparHtml(fila.nombre) + "</td>" +
+					"<td>" + escaparHtml(fila.lugar) + "</td>" +
+					"<td>" + formatearContacto(fila.contacto) + "</td>" +
+					"</tr>";
+			}).join("");
+		}
+
+		async function cargarTestimonios() {
+			const grid = document.getElementById("testimonios-grid");
+			if (!grid) return;
+
+			const { data, error } = await supabaseClient
+				.from("testimonios")
+				.select("nombre, rol, mensaje")
+				.eq("visible", true)
+				.order("orden", { ascending: true });
+
+			if (error || !data || data.length === 0) {
+				grid.innerHTML = '<div class="col-12"><p class="mbr-fonts-style display-7 align-center">' +
+					(error ? "No se pudieron cargar los testimonios." : "Aún no hay testimonios registrados.") +
+					"</p></div>";
+				return;
+			}
+			grid.innerHTML = data.map(function (t) {
+				return '<div class="col-12 col-md-6 col-lg-4 mb-4">' +
+					'<div class="card h-100 shadow-sm"><div class="card-body">' +
+					'<p class="mbr-text mbr-fonts-style display-7">"' + escaparHtml(t.mensaje) + '"</p>' +
+					'<p class="mbr-fonts-style display-7 mb-0"><strong>' + escaparHtml(t.nombre) + "</strong>" +
+					(t.rol ? '<br><small>' + escaparHtml(t.rol) + "</small>" : "") +
+					"</p></div></div></div>";
+			}).join("");
+		}
+
+		cargarTabla("fincas", "tbody-fincas");
+		cargarTabla("transporte", "tbody-transporte");
+		cargarTabla("juegos", "tbody-juegos");
+		cargarTabla("cocina", "tbody-cocina");
+		cargarTabla("graficos", "tbody-graficos");
+		cargarTestimonios();
+	</script>
+
 
 	<input name="animation" type="hidden">
 </body>

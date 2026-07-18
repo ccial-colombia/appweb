@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
+    <title>Administración | CCI AL/Colombia</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <style>
+        body { background: #f4f5f7; }
+        .celda-texto { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #vista-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .nav-pills .nav-link { cursor: pointer; }
+    </style>
+</head>
+
+<body>
+
+    <!-- ==================== LOGIN ==================== -->
+    <div id="vista-login">
+        <div class="card shadow" style="max-width: 400px; width: 100%;">
+            <div class="card-body p-4 text-center">
+                <img src="assets/images/CCI AL.png" alt="CCI AL/Colombia" style="height: 70px;" class="mb-3">
+                <h4 class="mb-3">Panel de administración</h4>
+                <input type="email" id="login-email" class="form-control mb-2" placeholder="Correo" autocomplete="username">
+                <input type="password" id="login-password" class="form-control mb-3" placeholder="Contraseña" autocomplete="current-password">
+                <button class="btn btn-primary w-100" onclick="iniciarSesion()">Ingresar</button>
+                <p id="login-error" class="text-danger mt-2 mb-0" style="display:none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PANEL ==================== -->
+    <div id="vista-panel" style="display:none;">
+        <nav class="navbar navbar-dark bg-dark px-3">
+            <span class="navbar-brand">Administración CCI AL/Colombia</span>
+            <div class="d-flex align-items-center gap-3">
+                <span id="usuario-email" class="text-white-50 small"></span>
+                <button class="btn btn-outline-light btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+            </div>
+        </nav>
+
+        <div class="container-fluid py-4">
+            <div class="row">
+                <div class="col-12 col-lg-2 mb-3">
+                    <ul class="nav nav-pills flex-lg-column flex-row flex-wrap" id="menu-tablas"></ul>
+                </div>
+                <div class="col-12 col-lg-10">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 id="titulo-tabla" class="mb-0"></h4>
+                        <button class="btn btn-success" onclick="abrirFormulario(null)">+ Agregar</button>
+                    </div>
+                    <div id="alerta" class="alert alert-danger" style="display:none;"></div>
+                    <div class="table-responsive bg-white rounded shadow-sm">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light" id="thead-datos"></thead>
+                            <tbody id="tbody-datos"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL AGREGAR / EDITAR ==================== -->
+    <div class="modal fade" id="modal-edicion" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-titulo"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-campos"></div>
+                <div class="modal-footer">
+                    <span id="modal-error" class="text-danger me-auto" style="display:none;"></span>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" onclick="guardar()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseClient = supabase.createClient(
+            "https://gmcuzmsckwtdvurboobh.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
+        );
+
+        // Definición de cada tabla administrable y sus campos.
+        // tipo: text | textarea | number | date | checkbox
+        const CAMPOS_RECURSO = [
+            { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
+            { campo: "lugar", etiqueta: "Lugar", tipo: "text" },
+            { campo: "contacto", etiqueta: "Contacto", tipo: "text" },
+            { campo: "orden", etiqueta: "Orden", tipo: "number" },
+            { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+        ];
+        const CAMPOS_CURSO = [
+            { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
+            { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
+            { campo: "enlace", etiqueta: "Enlace", tipo: "text" },
+            { campo: "fecha", etiqueta: "Fecha", tipo: "date" },
+            { campo: "orden", etiqueta: "Orden", tipo: "number" },
+            { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+        ];
+
+        const TABLAS = {
+            fincas: { titulo: "Fincas", pk: "id", campos: CAMPOS_RECURSO },
+            transporte: { titulo: "Transporte", pk: "id", campos: CAMPOS_RECURSO },
+            juegos: { titulo: "Juegos con propósito", pk: "id", campos: CAMPOS_RECURSO },
+            cocina: { titulo: "Cocina", pk: "id", campos: CAMPOS_RECURSO },
+            graficos: { titulo: "Gráficos", pk: "id", campos: CAMPOS_RECURSO },
+            testimonios: {
+                titulo: "Testimonios", pk: "id", campos: [
+                    { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
+                    { campo: "rol", etiqueta: "Rol o ministerio", tipo: "text" },
+                    { campo: "mensaje", etiqueta: "Testimonio", tipo: "textarea", requerido: true },
+                    { campo: "orden", etiqueta: "Orden", tipo: "number" },
+                    { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+                ]
+            },
+            cursos: { titulo: "Cursos", pk: "id", campos: CAMPOS_CURSO },
+            talleres: { titulo: "Talleres", pk: "id", campos: CAMPOS_CURSO },
+            videos: {
+                titulo: "Videos", pk: "id", campos: [
+                    { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
+                    { campo: "url", etiqueta: "URL (YouTube/Vimeo)", tipo: "text", requerido: true },
+                    { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
+                    { campo: "orden", etiqueta: "Orden", tipo: "number" },
+                    { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+                ]
+            },
+            informacion_general: {
+                titulo: "Información general", pk: "id", campos: [
+                    { campo: "clave", etiqueta: "Clave (identificador único)", tipo: "text", requerido: true },
+                    { campo: "titulo", etiqueta: "Título", tipo: "text" },
+                    { campo: "contenido", etiqueta: "Contenido", tipo: "textarea" }
+                ]
+            },
+            psw_change: {
+                titulo: "Contraseñas de acceso", pk: "correlativo", campos: [
+                    { campo: "fecha", etiqueta: "Vigente desde", tipo: "date", requerido: true },
+                    { campo: "contrasenia", etiqueta: "Contraseña", tipo: "text", requerido: true }
+                ]
+            }
+        };
+
+        let tablaActual = "fincas";
+        let filaEditando = null;
+        let modalEdicion = null;
+
+        function escaparHtml(texto) {
+            const div = document.createElement("div");
+            div.textContent = texto == null ? "" : String(texto);
+            return div.innerHTML;
+        }
+
+        function mostrarAlerta(mensaje) {
+            const alerta = document.getElementById("alerta");
+            alerta.textContent = mensaje || "";
+            alerta.style.display = mensaje ? "block" : "none";
+        }
+
+        // ==================== SESIÓN ====================
+
+        async function iniciarSesion() {
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value;
+            const error = document.getElementById("login-error");
+
+            const { error: err } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (err) {
+                error.textContent = "Credenciales incorrectas o usuario no autorizado.";
+                error.style.display = "block";
+                return;
+            }
+            error.style.display = "none";
+            mostrarPanel();
+        }
+
+        async function cerrarSesion() {
+            await supabaseClient.auth.signOut();
+            document.getElementById("vista-panel").style.display = "none";
+            document.getElementById("vista-login").style.display = "flex";
+        }
+
+        async function mostrarPanel() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+            document.getElementById("vista-login").style.display = "none";
+            document.getElementById("vista-panel").style.display = "block";
+            document.getElementById("usuario-email").textContent =
+                session.user.user_metadata.display_name || session.user.email;
+            construirMenu();
+            seleccionarTabla(tablaActual);
+        }
+
+        // ==================== PANEL ====================
+
+        function construirMenu() {
+            document.getElementById("menu-tablas").innerHTML = Object.keys(TABLAS).map(function (nombre) {
+                return '<li class="nav-item"><a class="nav-link' + (nombre === tablaActual ? " active" : "") +
+                    '" data-tabla="' + nombre + '" onclick="seleccionarTabla(\'' + nombre + '\')">' +
+                    escaparHtml(TABLAS[nombre].titulo) + "</a></li>";
+            }).join("");
+        }
+
+        function seleccionarTabla(nombre) {
+            tablaActual = nombre;
+            document.querySelectorAll("#menu-tablas .nav-link").forEach(function (enlace) {
+                enlace.classList.toggle("active", enlace.dataset.tabla === nombre);
+            });
+            document.getElementById("titulo-tabla").textContent = TABLAS[nombre].titulo;
+            cargarDatos();
+        }
+
+        async function cargarDatos() {
+            const def = TABLAS[tablaActual];
+            mostrarAlerta("");
+
+            let consulta = supabaseClient.from(tablaActual).select("*");
+            const tieneOrden = def.campos.some(function (c) { return c.campo === "orden"; });
+            consulta = tieneOrden
+                ? consulta.order("orden", { ascending: true }).order(def.pk, { ascending: true })
+                : consulta.order(def.pk, { ascending: true });
+
+            const { data, error } = await consulta;
+            if (error) {
+                mostrarAlerta("Error al cargar los datos: " + error.message);
+                return;
+            }
+
+            document.getElementById("thead-datos").innerHTML = "<tr>" +
+                def.campos.map(function (c) { return "<th>" + escaparHtml(c.etiqueta) + "</th>"; }).join("") +
+                '<th class="text-end">Acciones</th></tr>';
+
+            const tbody = document.getElementById("tbody-datos");
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="' + (def.campos.length + 1) +
+                    '" class="text-center text-muted py-4">No hay registros. Usa "+ Agregar".</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(function (fila) {
+                const celdas = def.campos.map(function (c) {
+                    const valor = fila[c.campo];
+                    if (c.tipo === "checkbox") {
+                        return '<td><span class="badge bg-' + (valor ? "success" : "secondary") + '">' +
+                            (valor ? "Sí" : "No") + "</span></td>";
+                    }
+                    return '<td class="celda-texto" title="' + escaparHtml(valor) + '">' + escaparHtml(valor) + "</td>";
+                }).join("");
+                return "<tr>" + celdas +
+                    '<td class="text-end text-nowrap">' +
+                    '<button class="btn btn-outline-primary btn-sm me-1" onclick="abrirFormulario(' + fila[def.pk] + ')">Editar</button>' +
+                    '<button class="btn btn-outline-danger btn-sm" onclick="eliminar(' + fila[def.pk] + ')">Eliminar</button>' +
+                    "</td></tr>";
+            }).join("");
+
+            cargarDatos.filas = data;
+        }
+
+        // ==================== AGREGAR / EDITAR / ELIMINAR ====================
+
+        function abrirFormulario(pkValor) {
+            const def = TABLAS[tablaActual];
+            filaEditando = pkValor == null ? null :
+                (cargarDatos.filas || []).find(function (f) { return f[def.pk] === pkValor; });
+
+            document.getElementById("modal-titulo").textContent =
+                (filaEditando ? "Editar" : "Agregar") + " — " + def.titulo;
+            document.getElementById("modal-error").style.display = "none";
+
+            document.getElementById("modal-campos").innerHTML = def.campos.map(function (c) {
+                const valor = filaEditando ? filaEditando[c.campo] : null;
+                if (c.tipo === "checkbox") {
+                    return '<div class="form-check form-switch mb-3">' +
+                        '<input class="form-check-input" type="checkbox" id="campo-' + c.campo + '"' +
+                        ((filaEditando ? valor : true) ? " checked" : "") + '>' +
+                        '<label class="form-check-label" for="campo-' + c.campo + '">' + escaparHtml(c.etiqueta) + "</label></div>";
+                }
+                const etiqueta = '<label class="form-label" for="campo-' + c.campo + '">' + escaparHtml(c.etiqueta) +
+                    (c.requerido ? ' <span class="text-danger">*</span>' : "") + "</label>";
+                if (c.tipo === "textarea") {
+                    return '<div class="mb-3">' + etiqueta +
+                        '<textarea class="form-control" rows="4" id="campo-' + c.campo + '">' + escaparHtml(valor) + "</textarea></div>";
+                }
+                return '<div class="mb-3">' + etiqueta +
+                    '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +
+                    '" value="' + escaparHtml(valor) + '"></div>';
+            }).join("");
+
+            modalEdicion.show();
+        }
+
+        async function guardar() {
+            const def = TABLAS[tablaActual];
+            const registro = {};
+            const errorModal = document.getElementById("modal-error");
+
+            for (const c of def.campos) {
+                const control = document.getElementById("campo-" + c.campo);
+                let valor;
+                if (c.tipo === "checkbox") {
+                    valor = control.checked;
+                } else {
+                    valor = control.value.trim();
+                    if (valor === "") valor = null;
+                    if (c.tipo === "number" && valor !== null) valor = Number(valor);
+                }
+                if (c.requerido && (valor === null || valor === "")) {
+                    errorModal.textContent = 'El campo "' + c.etiqueta + '" es obligatorio.';
+                    errorModal.style.display = "inline";
+                    return;
+                }
+                registro[c.campo] = valor;
+            }
+
+            const consulta = filaEditando
+                ? supabaseClient.from(tablaActual).update(registro).eq(def.pk, filaEditando[def.pk])
+                : supabaseClient.from(tablaActual).insert(registro);
+
+            const { error } = await consulta;
+            if (error) {
+                errorModal.textContent = "Error al guardar: " + error.message;
+                errorModal.style.display = "inline";
+                return;
+            }
+            modalEdicion.hide();
+            cargarDatos();
+        }
+
+        async function eliminar(pkValor) {
+            const def = TABLAS[tablaActual];
+            if (!confirm("¿Eliminar este registro de \"" + def.titulo + "\"? Esta acción no se puede deshacer.")) return;
+
+            const { error } = await supabaseClient.from(tablaActual).delete().eq(def.pk, pkValor);
+            if (error) {
+                mostrarAlerta("Error al eliminar: " + error.message);
+                return;
+            }
+            cargarDatos();
+        }
+
+        // ==================== INICIO ====================
+
+        document.addEventListener("DOMContentLoaded", function () {
+            modalEdicion = new bootstrap.Modal(document.getElementById("modal-edicion"));
+            document.getElementById("login-password").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") iniciarSesion();
+            });
+            mostrarPanel(); // restaura la sesión si ya había iniciado
+        });
+    </script>
+</body>
+
+</html>
