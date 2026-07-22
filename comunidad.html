@@ -33,8 +33,11 @@
 	</noscript>
 	<link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=ZGAzXW">
 	<link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=ZGAzXW" type="text/css">
-
-
+	<style>
+		.ql-align-center { text-align: center; }
+		.ql-align-right { text-align: right; }
+		.ql-align-justify { text-align: justify; }
+	</style>
 
 
 </head>
@@ -54,7 +57,7 @@
 				<div class="navbar-brand">
 					<span class="navbar-logo">
 
-						<img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL/Colombia" style="height: 3rem;">
+						<a href="index.html"><img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL/Colombia" style="height: 3rem;"></a>
 
 					</span>
 
@@ -147,7 +150,9 @@
 								<tr>
 									<th scope="col">Nombre</th>
 									<th scope="col">Lugar</th>
+									<th scope="col">Ciudad</th>
 									<th scope="col">Contacto</th>
+									<th scope="col">Capacidad</th>
 								</tr>
 							</thead>
 							<tbody id="tbody-fincas">
@@ -364,17 +369,17 @@
 
 							<li class="row-links-soc-item mbr-fonts-style display-7"><a
 									href="https://www.facebook.com/487429831785922" class="text-white text-primary"
-									target="_blank">Facebook</a></li>
+									target="_blank" aria-label="Facebook" title="Facebook"><span class="socicon-facebook" style="font-size:1.5rem;line-height:1;"></span></a></li>
 							<li class="row-links-soc-item mbr-fonts-style display-7"><a
 									href="https://www.instagram.com/ccial.colombia/" class="text-white text-primary"
-									target="_blank">Instagram</a></li>
+									target="_blank" aria-label="Instagram" title="Instagram"><span class="socicon-instagram" style="font-size:1.5rem;line-height:1;"></span></a></li>
 							<li class="row-links-soc-item mbr-fonts-style display-7">
 								<a href="https://www.youtube.com/@CCIALCOLOMBIA" class="text-white text-primary"
-									target="_blank">YouTube</a>
+									target="_blank" aria-label="YouTube" title="YouTube"><span class="socicon-youtube" style="font-size:1.5rem;line-height:1;"></span></a>
 							</li>
 							<li class="row-links-soc-item mbr-fonts-style display-7"><a
 									href="mailto:comunicacionesccialcol@gmail.com?subject=Consulta%20desde%20Pagina%20Web"
-									class="text-white text-primary">E-mail</a></li>
+									class="text-white text-primary" aria-label="Correo electrónico" title="Correo electrónico"><span class="socicon-mail" style="font-size:1.5rem;line-height:1;"></span></a></li>
 						</ul>
 					</div>
 				</div>
@@ -394,13 +399,50 @@
 		// Carga el contenido de la página desde la base de datos en Supabase.
 		const supabaseClient = supabase.createClient(
 			"https://gmcuzmsckwtdvurboobh.supabase.co",
-			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk",
+			{ global: { fetch: (url, options) => fetch(url, Object.assign({}, options, { cache: "no-store" })) } }
 		);
 
 		function escaparHtml(texto) {
 			const div = document.createElement("div");
 			div.textContent = texto == null ? "" : String(texto);
 			return div.innerHTML;
+		}
+
+		function obtenerTextoPlano(html) {
+			const div = document.createElement("div");
+			div.innerHTML = html || "";
+			return div.textContent || "";
+		}
+
+		// Trunca HTML con formato (negrita, cursiva, etc.) sin dejar etiquetas
+		// a medio cerrar, cortando en el límite de caracteres de texto visible.
+		function truncarHtml(html, limite) {
+			const contenedor = document.createElement("div");
+			contenedor.innerHTML = html || "";
+			let restante = limite;
+
+			function recorrer(nodo) {
+				const hijos = Array.from(nodo.childNodes);
+				for (const hijo of hijos) {
+					if (restante <= 0) {
+						nodo.removeChild(hijo);
+						continue;
+					}
+					if (hijo.nodeType === Node.TEXT_NODE) {
+						if (hijo.textContent.length > restante) {
+							hijo.textContent = hijo.textContent.substring(0, restante) + "…";
+							restante = 0;
+						} else {
+							restante -= hijo.textContent.length;
+						}
+					} else if (hijo.nodeType === Node.ELEMENT_NODE) {
+						recorrer(hijo);
+					}
+				}
+			}
+			recorrer(contenedor);
+			return contenedor.innerHTML;
 		}
 
 		// Convierte el contacto en enlace si es correo o URL.
@@ -443,13 +485,42 @@
 			}).join("");
 		}
 
+		async function cargarFincas() {
+			const tbody = document.getElementById("tbody-fincas");
+			if (!tbody) return;
+
+			const { data, error } = await supabaseClient
+				.from("fincas")
+				.select("nombre, lugar, ciudad, contacto, capacidad")
+				.eq("visible", true)
+				.order("orden", { ascending: true });
+
+			if (error) {
+				tbody.innerHTML = '<tr><td colspan="5" class="text-center">No se pudo cargar la información.</td></tr>';
+				return;
+			}
+			if (!data || data.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="5" class="text-center">Aún no hay información registrada.</td></tr>';
+				return;
+			}
+			tbody.innerHTML = data.map(function (fila) {
+				return "<tr>" +
+					"<td>" + escaparHtml(fila.nombre) + "</td>" +
+					"<td>" + escaparHtml(fila.lugar) + "</td>" +
+					"<td>" + escaparHtml(fila.ciudad) + "</td>" +
+					"<td>" + formatearContacto(fila.contacto) + "</td>" +
+					"<td>" + escaparHtml(fila.capacidad) + "</td>" +
+					"</tr>";
+			}).join("");
+		}
+
 		async function cargarTestimonios() {
 			const grid = document.getElementById("testimonios-grid");
 			if (!grid) return;
 
 			const { data, error } = await supabaseClient
 				.from("testimonios")
-				.select("nombre, rol, mensaje")
+				.select("id, nombre, rol, mensaje, foto_url")
 				.eq("visible", true)
 				.order("orden", { ascending: true });
 
@@ -459,17 +530,29 @@
 					"</p></div>";
 				return;
 			}
+			const LIMITE_CARACTERES = 255;
 			grid.innerHTML = data.map(function (t) {
+				const mensaje = t.mensaje || "";
+				const esLargo = obtenerTextoPlano(mensaje).length > LIMITE_CARACTERES;
+				const htmlMostrado = esLargo ? truncarHtml(mensaje, LIMITE_CARACTERES) : mensaje;
+				const enlaceLeerMas = esLargo
+					? ' <a href="testimonio.html?id=' + encodeURIComponent(t.id) + '">leer más...</a>'
+					: "";
+				const foto = t.foto_url
+					? '<img src="' + escaparHtml(t.foto_url) + '" alt="Foto de ' + escaparHtml(t.nombre) +
+					  '" class="rounded-circle mb-3" style="width:80px;height:80px;object-fit:cover;">'
+					: "";
 				return '<div class="col-12 col-md-6 col-lg-4 mb-4">' +
-					'<div class="card h-100 shadow-sm"><div class="card-body">' +
-					'<p class="mbr-text mbr-fonts-style display-7">"' + escaparHtml(t.mensaje) + '"</p>' +
-					'<p class="mbr-fonts-style display-7 mb-0"><strong>' + escaparHtml(t.nombre) + "</strong>" +
+					'<div class="card h-100 shadow-sm"><div class="card-body d-flex flex-column align-items-center">' +
+					foto +
+					'<div class="mbr-text mbr-fonts-style display-7 w-100">' + htmlMostrado + enlaceLeerMas + '</div>' +
+					'<p class="mbr-fonts-style display-7 mb-0 mt-auto text-center"><strong>' + escaparHtml(t.nombre) + "</strong>" +
 					(t.rol ? '<br><small>' + escaparHtml(t.rol) + "</small>" : "") +
 					"</p></div></div></div>";
 			}).join("");
 		}
 
-		cargarTabla("fincas", "tbody-fincas");
+		cargarFincas();
 		cargarTabla("transporte", "tbody-transporte");
 		cargarTabla("juegos", "tbody-juegos");
 		cargarTabla("cocina", "tbody-cocina");

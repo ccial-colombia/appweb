@@ -1,9 +1,9 @@
 # 🚀 CCI AL Colombia — Static to Dynamic Migration Plan
 
-> **Date:** February 21, 2026 — Revisado: April 6, 2026
-> **Status:** PLAN REVISADO — No code changes until approved
+> **Date:** February 21, 2026
+> **Status:** PLAN — No code changes until approved
 > **Current stack:** Static HTML + Bootstrap 5 (Mobirise)
-> **Target stack:** Next.js 14 + Supabase (PostgreSQL + Auth + Storage)
+> **Target stack:** Next.js + Node.js/Express + PostgreSQL
 
 ---
 
@@ -106,162 +106,245 @@ mindmap
 
 ## 3. Proposed Architecture
 
-> **Cambio arquitectónico clave:** Al usar Supabase, se elimina la necesidad de un backend Express separado. Supabase provee Auth, PostgreSQL y Storage. La lógica personalizada se maneja con Next.js Server Actions o API Routes.
-
 ```mermaid
 graph TB
-    subgraph "Frontend (Next.js 14 - App Router)"
+    subgraph "Frontend (Next.js)"
         A[Public Pages] --> B[Login Page]
         A --> C[Protected Pages]
         C --> D[Admin Panel]
         C --> E[Member Dashboard]
     end
 
-    subgraph "Supabase BaaS"
-        F[Supabase Auth] --> G[JWT / RLS]
-        G --> H[PostgreSQL DB]
-        G --> I[Storage Buckets]
-        H --> J[(profiles)]
-        H --> K[(content tables)]
-        H --> L[(site settings)]
-        I --> M[(media bucket)]
-        I --> N[(avatars bucket)]
+    subgraph "Backend (Node.js + Express)"
+        F[Auth API] --> G[JWT Middleware]
+        G --> H[Content API]
+        G --> I[Users API]
+        G --> J[Media API]
     end
 
-    B -->|"signInWithPassword()"| F
-    D -->|"supabase-js CRUD"| H
-    D -->|"upload()"| I
-    E -->|"select() with RLS"| H
-    C -->|"Session check"| F
+    subgraph "Database (PostgreSQL)"
+        K[(Users)]
+        L[(Pages / Sections)]
+        M[(Courses)]
+        N[(Products)]
+        O[(Community Resources)]
+        P[(Media / Images)]
+        Q[(Site Settings)]
+    end
+
+    subgraph "Storage"
+        R[File System / Cloud Storage]
+    end
+
+    B -->|Login| F
+    D -->|CRUD| H
+    D -->|Upload| J
+    H --> K & L & M & N & O & Q
+    J --> P & R
+    E -->|Read| H
 ```
 
 ### Folder Structure
 
 ```
 ccialcol/
-├── app/                           # Next.js 14 App Router
-│   ├── (public)/                  # Public routes
-│   │   ├── page.tsx               # Landing / index
-│   │   └── login/page.tsx
-│   ├── (protected)/               # Member-only routes (middleware check)
-│   │   ├── inicio/page.tsx
-│   │   ├── equipados/page.tsx
-│   │   ├── exclusivo/page.tsx
-│   │   ├── comunidad/page.tsx
-│   │   └── campatienda/page.tsx
-│   └── admin/                     # Admin panel (Editor+ only)
-│       ├── dashboard/page.tsx
-│       ├── users/page.tsx
-│       ├── content/page.tsx
-│       ├── products/page.tsx
-│       └── settings/page.tsx
+├── client/                    # Next.js Frontend
+│   ├── app/
+│   │   ├── (public)/          # Public routes (landing, login)
+│   │   ├── (protected)/       # Member-only routes
+│   │   │   ├── inicio/
+│   │   │   ├── equipados/
+│   │   │   ├── exclusivo/
+│   │   │   ├── comunidad/
+│   │   │   └── campatienda/
+│   │   └── admin/             # Admin panel routes
+│   │       ├── dashboard/
+│   │       ├── users/
+│   │       ├── content/
+│   │       ├── products/
+│   │       └── settings/
+│   ├── components/
+│   │   ├── layout/            # Navbar, Footer, Sidebar
+│   │   ├── ui/                # Reusable UI components
+│   │   └── admin/             # Admin-specific components
+│   └── lib/
+│       ├── api.js             # API client
+│       └── auth.js            # Auth helpers
 │
-├── components/
-│   ├── layout/                    # Navbar, Footer, Sidebar
-│   ├── ui/                        # Reusable UI (Bootstrap components)
-│   └── admin/                     # Admin-specific components
+├── server/                    # Node.js + Express Backend
+│   ├── controllers/
+│   ├── middleware/             # auth, roles, uploads
+│   ├── models/                # Sequelize / Prisma models
+│   ├── routes/
+│   ├── config/
+│   │   └── db.js
+│   └── server.js
 │
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts              # Browser-side Supabase client
-│   │   ├── server.ts              # Server-side Supabase client (SSR)
-│   │   └── middleware.ts          # Auth session refresh
-│   └── utils.ts
+├── database/
+│   ├── migrations/
+│   └── seeders/               # Initial data from current HTML
 │
-├── middleware.ts                   # Next.js route protection
-│
-└── supabase/
-    ├── migrations/                # SQL migration files
-    └── seed.sql                   # Initial data from current HTML
+└── uploads/                   # User-uploaded media
 ```
 
 ---
 
 ## 4. Database Design
 
-> **La especificación completa de la base de datos está en [BaseDatos.md](BaseDatos.md)**
-> Incluye: esquema SQL completo, políticas RLS, Storage buckets, triggers y seed inicial.
-
-### Cambios clave respecto al diseño original
-
-| Antes (plan original) | Ahora (Supabase-native) |
-|-----------------------|------------------------|
-| `USERS` con `password_hash` | `profiles` extiende `auth.users` de Supabase (sin passwords en la app) |
-| IDs enteros (`int`) | UUIDs (`uuid`, generados con `gen_random_uuid()`) |
-| `MEDIA` table custom | Supabase Storage buckets (`media`, `avatars`) |
-| Sin seguridad a nivel de BD | Row Level Security (RLS) en todas las tablas |
-| Prisma ORM para migraciones | Migraciones SQL directas en Supabase |
-| `string` como tipo | `text`, `jsonb`, `timestamptz`, `numeric` (tipos reales PostgreSQL) |
-
-### Resumen del Esquema
-
 ```mermaid
 erDiagram
-    AUTH_USERS ||--|| PROFILES : extends
-    PROFILES ||--o{ SITE_SETTINGS : "updated_by"
-    PROFILES ||--o{ PAGE_SECTIONS : "updated_by"
-    PAGES ||--o{ PAGE_SECTIONS : contains
-    PAGES ||--o{ GALLERY_IMAGES : has
-    PAGES ||--o{ VIDEO_EMBEDS : has
+    USERS {
+        int id PK
+        string email UK
+        string password_hash
+        string full_name
+        string role "superadmin | admin | editor | member"
+        boolean is_active
+        timestamp created_at
+        timestamp last_login
+    }
 
-    PROFILES {
-        uuid id PK_FK
-        text full_name
-        user_role role
+    SITE_SETTINGS {
+        int id PK
+        string key UK "site_name, logo_url, copyright, etc."
+        text value
+        timestamp updated_at
+        int updated_by FK
+    }
+
+    NAV_ITEMS {
+        int id PK
+        string label
+        string url
+        boolean is_external
+        int display_order
         boolean is_active
     }
 
+    SOCIAL_LINKS {
+        int id PK
+        string platform "facebook, instagram, youtube, email"
+        string url
+        string icon
+        int display_order
+    }
+
     PAGES {
-        uuid id PK
-        text slug UK
+        int id PK
+        string slug UK "inicio, equipados, exclusivo, etc."
+        string title
+        text meta_description
         boolean requires_auth
+        timestamp updated_at
+    }
+
+    PAGE_SECTIONS {
+        int id PK
+        int page_id FK
+        string section_type "hero, text, gallery, video, cards"
+        string title
+        text content "JSON or rich text"
+        string image_url
+        int display_order
+        boolean is_visible
     }
 
     COURSES {
-        uuid id PK
-        text title
-        course_category category
+        int id PK
+        string title
+        string subtitle
+        text description
+        string image_url
+        string category "course | workshop"
+        int display_order
         boolean is_active
     }
 
     PRODUCTS {
-        uuid id PK
-        text name
-        numeric price
+        int id PK
+        string name
+        text description
+        decimal price
+        string image_url
         boolean is_available
+        int display_order
     }
 
     COMMUNITY_RESOURCES {
-        uuid id PK
-        community_category category
-        text title
-        boolean is_active
+        int id PK
+        string category "finca | transporte | juego | cocina | grafico"
+        string title
+        text content
+        string contact_info
+        string location
+        string file_url
+        int display_order
     }
+
+    TESTIMONIALS {
+        int id PK
+        string author_name
+        text quote
+        string author_photo_url
+        boolean is_active
+        int display_order
+    }
+
+    GALLERY_IMAGES {
+        int id PK
+        int page_id FK
+        string section_name
+        string image_url
+        string alt_text
+        string caption
+        int display_order
+    }
+
+    VIDEO_EMBEDS {
+        int id PK
+        int page_id FK
+        string youtube_url
+        string title
+        text description
+        int display_order
+    }
+
+    MEDIA {
+        int id PK
+        string filename
+        string filepath
+        string mimetype
+        int size_bytes
+        int uploaded_by FK
+        timestamp uploaded_at
+    }
+
+    USERS ||--o{ MEDIA : uploads
+    USERS ||--o{ SITE_SETTINGS : updates
+    PAGES ||--o{ PAGE_SECTIONS : contains
+    PAGES ||--o{ GALLERY_IMAGES : has
+    PAGES ||--o{ VIDEO_EMBEDS : has
 ```
 
-### Decisiones clave del diseño
+### Key Design Decisions
 
-- **`profiles`** extiende `auth.users` — Supabase Auth maneja contraseñas; la app solo guarda nombre y rol
-- **`page_sections.content`** usa `jsonb` — cada tipo de sección guarda una estructura diferente sin cambios de esquema
-- **`community_resources.category`** como enum — Fincas, Transporte, Juegos, Cocina y Gráficos en una sola tabla
-- **`courses.category`** — separa Cursos de Talleres en la misma tabla
-- **RLS en todas las tablas** — la autorización vive en la base de datos, no en el código
-- **Supabase Storage** reemplaza la tabla `MEDIA` y el almacenamiento local de archivos
+- **`PAGE_SECTIONS`** uses a flexible `content` column (JSON) so any section can store rich text, lists, or structured data without schema changes
+- **`COMMUNITY_RESOURCES`** uses a `category` enum to handle Fincas, Transporte, Juegos, Cocina, and Gráficos in one table
+- **`COURSES`** has a `category` field to separate "Cursos" from "Talleres" (workshops)
+- **`MEDIA`** is a centralized table for all uploaded files, linked to the uploader
 
 ---
 
 ## 5. Authentication & Roles
 
-> **Con Supabase Auth:** No se necesita implementar JWT ni bcrypt manualmente. Supabase maneja toda la autenticación y los roles se gestionan a través de la tabla `profiles` y Row Level Security (RLS).
-
 ### Role Hierarchy
 
 ```mermaid
 graph TD
-    SA["SuperAdmin"]
-    A["Admin"]
-    E["Editor"]
-    M["Member"]
+    SA["🔴 Super Admin"]
+    A["🟠 Admin"]
+    E["🟡 Editor"]
+    M["🟢 Member"]
 
     SA -->|"Can do everything + manage admins"| A
     A -->|"Can manage content + users"| E
@@ -287,40 +370,41 @@ graph TD
 | Delete site data | ✅ | ❌ | ❌ | ❌ |
 | Promote to admin | ✅ | ❌ | ❌ | ❌ |
 
-### Auth Flow con Supabase
+### Auth Flow
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant F as Next.js Frontend
-    participant SA as Supabase Auth
-    participant DB as PostgreSQL (RLS)
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
 
     U->>F: Opens login page
     U->>F: Enters email + password
-    F->>SA: supabase.auth.signInWithPassword()
-    SA->>DB: Verify credentials
-    DB-->>SA: User record
+    F->>B: POST /api/auth/login
+    B->>DB: Find user by email
+    DB-->>B: User record
+    B->>B: bcrypt.compare(password, hash)
     alt Valid Credentials
-        SA-->>F: Session { access_token, user }
-        F->>F: Store session in cookie (SSR-safe)
-        F->>DB: Query profiles for role
+        B->>B: Generate JWT (payload: id, role, exp)
+        B-->>F: { token, user: {name, role} }
+        F->>F: Store token in httpOnly cookie
         F->>F: Redirect based on role
     else Invalid
-        SA-->>F: AuthError
+        B-->>F: 401 Unauthorized
         F->>U: Show error message
     end
-    Note over DB: Every query filtered by RLS policies<br/>based on auth.uid() and role
 ```
 
-### Security Measures (Supabase-native)
+### Security Measures
 
-- **Supabase Auth** — maneja hashing de contraseñas, tokens y sesiones automáticamente
-- **Row Level Security (RLS)** — cada tabla tiene políticas que filtran por `auth.uid()` y rol
-- **httpOnly cookies** — sesión almacenada con `@supabase/ssr` (nunca expuesta a JS)
-- **Rate limiting** — configurado en Supabase Auth dashboard (max intentos por IP)
-- **SQL injection** — imposible con el cliente `supabase-js` (queries parametrizados)
-- **CORS** — configurado en Supabase project settings
+- **bcrypt** for password hashing (cost factor 12)
+- **JWT** tokens with short expiration (1 hour) + refresh tokens (7 days)
+- **httpOnly cookies** — tokens never accessible via JavaScript
+- **Rate limiting** on login endpoint (5 attempts per 15 minutes)
+- **CORS** restricted to the frontend domain only
+- **Input validation** on all API endpoints (express-validator)
+- **SQL injection protection** via Prisma ORM (parameterized queries)
 
 ---
 
@@ -358,65 +442,79 @@ sequenceDiagram
 
 ---
 
-## 7. Data Access Plan (Supabase Client)
+## 7. Backend Plan (API)
 
-### Technology: Next.js 14 Server Actions + `supabase-js` SDK
+### Technology: Node.js + Express + Prisma ORM + PostgreSQL
 
-> **No se necesita Express.** Toda la lógica de datos se hace directamente con el cliente Supabase en Server Actions o Route Handlers de Next.js. La autorización la aplica RLS en PostgreSQL automáticamente.
+#### API Endpoints
 
-#### Patrón de Acceso a Datos
+##### Auth
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `POST` | `/api/auth/register` | Create new user (admin only) | Admin+ |
+| `POST` | `/api/auth/login` | Login, returns JWT | Public |
+| `POST` | `/api/auth/refresh` | Refresh JWT token | Authenticated |
+| `POST` | `/api/auth/logout` | Invalidate refresh token | Authenticated |
+| `PUT` | `/api/auth/password` | Change own password | Authenticated |
 
-```typescript
-// lib/supabase/server.ts — cliente SSR
-import { createServerClient } from '@supabase/ssr'
+##### Users
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/users` | List all users | Admin+ |
+| `GET` | `/api/users/:id` | Get user details | Admin+ or self |
+| `PUT` | `/api/users/:id` | Update user info | Admin+ or self |
+| `PUT` | `/api/users/:id/role` | Change user role | Admin+ |
+| `DELETE` | `/api/users/:id` | Deactivate user | SuperAdmin |
 
-// En un Server Component o Server Action:
-const supabase = createServerClient(...)
+##### Content
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/pages` | List all pages | Public |
+| `GET` | `/api/pages/:slug` | Get page with sections | Public* |
+| `PUT` | `/api/pages/:slug` | Update page metadata | Editor+ |
+| `GET` | `/api/sections/:id` | Get a section | Public* |
+| `PUT` | `/api/sections/:id` | Update section content | Editor+ |
 
-// Lectura (RLS filtra automáticamente por rol)
-const { data: courses } = await supabase
-  .from('courses')
-  .select('*')
-  .eq('is_active', true)
-  .order('display_order')
+##### Courses & Workshops
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/courses` | List all courses | Member+ |
+| `POST` | `/api/courses` | Create a course | Editor+ |
+| `PUT` | `/api/courses/:id` | Update a course | Editor+ |
+| `DELETE` | `/api/courses/:id` | Delete a course | Admin+ |
 
-// Escritura (RLS verifica que el usuario sea Editor+)
-const { error } = await supabase
-  .from('courses')
-  .insert({ title, description, category })
+##### Products (CampaTienda)
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/products` | List products | Member+ |
+| `POST` | `/api/products` | Add a product | Editor+ |
+| `PUT` | `/api/products/:id` | Update a product | Editor+ |
+| `DELETE` | `/api/products/:id` | Remove a product | Admin+ |
 
-// Upload de media
-const { data } = await supabase.storage
-  .from('media')
-  .upload(`courses/${filename}`, file)
-```
+##### Community Resources
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/community?category=finca` | List by category | Member+ |
+| `POST` | `/api/community` | Add a resource | Editor+ |
+| `PUT` | `/api/community/:id` | Update a resource | Editor+ |
+| `DELETE` | `/api/community/:id` | Remove a resource | Admin+ |
 
-#### Operaciones por Módulo
+##### Media
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `POST` | `/api/media/upload` | Upload image/file | Editor+ |
+| `GET` | `/api/media` | List uploaded media | Editor+ |
+| `DELETE` | `/api/media/:id` | Delete an uploaded file | Admin+ |
 
-| Módulo | Operación | Mecanismo | Autorización |
-|--------|-----------|-----------|-------------|
-| Auth | Login / Logout | `supabase.auth.signInWithPassword()` | Supabase Auth |
-| Auth | Crear usuario (admin) | `supabase.auth.admin.createUser()` | Server Action (Admin+) |
-| Auth | Cambiar contraseña | `supabase.auth.updateUser()` | Supabase Auth |
-| Usuarios | Listar / editar | `from('profiles').select()` | RLS Admin+ |
-| Contenido | CRUD páginas | `from('page_sections')` | RLS Editor+ |
-| Cursos | CRUD | `from('courses')` | RLS Editor+ / Member read |
-| Productos | CRUD | `from('products')` | RLS Editor+ / Member read |
-| Comunidad | CRUD | `from('community_resources')` | RLS Editor+ / Member read |
-| Media | Upload | `storage.from('media').upload()` | RLS Editor+ |
-| Media | Listar | `storage.from('media').list()` | RLS Editor+ |
-| Settings | Leer | `from('site_settings').select()` | Público |
-| Settings | Actualizar | `from('site_settings').update()` | RLS Admin+ |
+##### Settings
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/settings` | Get all site settings | Public |
+| `PUT` | `/api/settings/:key` | Update a setting | Admin+ |
+| `GET` | `/api/nav` | Get nav items | Public |
+| `PUT` | `/api/nav` | Update nav items | Admin+ |
 
-#### Route Handlers necesarios (Next.js `/app/api/`)
-
-Solo se necesitan Route Handlers para operaciones que no pueden hacerse directamente desde el cliente:
-
-| Ruta | Propósito |
-|------|-----------|
-| `POST /api/auth/callback` | OAuth callback handler (Supabase) |
-| `POST /api/admin/users` | Crear usuario vía `supabase.auth.admin` (requiere service role key) |
-| `DELETE /api/admin/users/:id` | Eliminar usuario de auth.users (requiere service role key) |
+> \* Public endpoints for protected pages return content only if the request includes a valid JWT.
 
 ---
 
@@ -473,43 +571,42 @@ Solo se necesitan Route Handlers para operaciones que no pueden hacerse directam
 
 ## 9. Migration Phases
 
-### Phase 1 — Foundation & Supabase Setup (Week 1–2)
-- [ ] Create Supabase project (database + auth + storage)
-- [ ] Ejecutar migraciones SQL de [BaseDatos.md](BaseDatos.md) en el SQL Editor de Supabase
-- [ ] Configurar Storage buckets (`media`, `avatars`)
-- [ ] Set up Next.js 14 project con `@supabase/ssr`
-- [ ] Ejecutar seed inicial desde `supabase/seed.sql`
+### Phase 1 — Foundation (Week 1–2)
+- [ ] Set up Next.js project with the current design
+- [ ] Set up Express backend and PostgreSQL
+- [ ] Implement Prisma ORM models and migrations
+- [ ] Create seed scripts from current HTML content
 
 ### Phase 2 — Authentication (Week 2–3)
-- [ ] Build login page (reemplazando el modal actual)
-- [ ] Integrar `supabase.auth.signInWithPassword()`
-- [ ] Configurar middleware de Next.js para protección de rutas
-- [ ] Crear Route Handler `POST /api/admin/users` para crear usuarios (con service role key)
-- [ ] Generar tipos TypeScript con `supabase gen types`
+- [ ] Build login page (replacing current modal)
+- [ ] Implement JWT auth with bcrypt
+- [ ] Add role-based middleware
+- [ ] Create user management API
 
-### Phase 3 — Frontend Migration (Week 3–5)
-- [ ] Convertir cada página estática a Next.js page
-- [ ] Fetch de contenido desde Supabase en Server Components
-- [ ] Mantener Bootstrap layout y estilos actuales
-- [ ] Agregar toolbar de edición inline para Editor+
+### Phase 3 — Content API (Week 3–4)
+- [ ] Build CRUD endpoints for all content types
+- [ ] Implement media upload with image optimization
+- [ ] Migrate current HTML content into database seeders
+- [ ] Build API documentation
 
-### Phase 4 — Content Management (Week 5–7)
-- [ ] Server Actions para CRUD de cursos, productos, comunidad
-- [ ] Upload de imágenes a Supabase Storage
-- [ ] Editor de secciones de página (rich text + imagen)
-- [ ] Migrar contenido HTML actual a la DB via seed
+### Phase 4 — Frontend Migration (Week 4–6)
+- [ ] Convert each static page to a Next.js page
+- [ ] Fetch content from API instead of hardcoded HTML
+- [ ] Maintain current Bootstrap layout and styling
+- [ ] Add route protection middleware
 
-### Phase 5 — Admin Panel (Week 7–8)
-- [ ] Dashboard con vista general
-- [ ] Gestión de usuarios (crear, asignar roles, activar/desactivar)
-- [ ] Panel de settings del sitio (logo, nav, footer, redes sociales)
-- [ ] Biblioteca de media (listar, subir, eliminar)
+### Phase 5 — Admin Panel (Week 6–8)
+- [ ] Build admin dashboard layout
+- [ ] Create content editor (rich text + image upload)
+- [ ] Build course/product/community CRUD interfaces
+- [ ] Implement user management panel
+- [ ] Build site settings panel
 
 ### Phase 6 — Testing & Deployment (Week 8–9)
-- [ ] Pruebas end-to-end de todos los flujos
-- [ ] Verificación de políticas RLS (intentar bypass como member)
-- [ ] Deploy frontend en Vercel (conectar con Supabase env vars)
-- [ ] Migración DNS y go-live
+- [ ] End-to-end testing of all flows
+- [ ] Security audit (auth, permissions, input validation)
+- [ ] Deploy to hosting platform
+- [ ] DNS migration and go-live
 
 ---
 
@@ -517,47 +614,40 @@ Solo se necesitan Route Handlers para operaciones que no pueden hacerse directam
 
 | Technology | Why? |
 |-----------|------|
-| **Next.js 14** | SSR para SEO, App Router con Server Actions, middleware para protección de rutas, deployment fácil en Vercel |
-| **Supabase** | PostgreSQL + Auth + Storage en una plataforma — elimina la necesidad de backend Express separado, RLS para seguridad a nivel de BD |
-| **`@supabase/ssr`** | Manejo de sesión seguro en cookies httpOnly compatible con Next.js App Router |
-| **PostgreSQL (via Supabase)** | Datos relacionales (usuarios → contenido → media), robusto, RLS nativo |
-| **Supabase Storage** | Almacenamiento de archivos integrado con las mismas políticas de seguridad que la DB |
-| **Bootstrap 5** | Ya usado en el sitio actual — cero disrupción visual durante la migración |
+| **Next.js** | SSR for SEO, file-based routing mirrors current structure, great DX, easy deployment on Vercel |
+| **Node.js + Express** | JavaScript everywhere (same language as frontend), huge ecosystem, lightweight |
+| **PostgreSQL** | Relational data (users, courses, products), robust, free, excellent for structured content |
+| **Prisma ORM** | Type-safe queries, auto-generated migrations, visual schema, prevents SQL injection |
+| **JWT + bcrypt** | Industry standard for stateless auth, works well with REST APIs |
+| **Bootstrap 5** | Already used in the current site — zero visual disruption during migration |
 
 ### Alternatives Considered
 
-| En vez de | Se podría usar | Por qué no |
-|-----------|---------------|------------|
-| Supabase | Firebase | Menos control sobre datos; no tiene SQL real; más costoso a escala moderada |
-| Supabase | Express + PostgreSQL manual | Requiere mantener un servidor, implementar auth manualmente, más complejidad |
-| Next.js | Plain React + Vite | Pierde SSR y SEO; más configuración manual |
-| Supabase Storage | Cloudinary | Costo adicional; fragmentación de servicios; Supabase Storage es suficiente para este caso |
-| Supabase Auth | Auth.js (NextAuth) | Supabase Auth ya está integrado; evita configuración adicional |
+| Instead of | Could use | Why not |
+|-----------|----------|---------|
+| Next.js | Plain React + Vite | Loses SSR and SEO; more manual setup |
+| PostgreSQL | MongoDB | The data is highly relational (users → content → media); SQL is a better fit |
+| Express | Fastify | Express has larger community and simpler learning curve for this project size |
+| Self-hosted | Firebase | Less control over data; vendor lock-in; more expensive at moderate scale |
 
 ---
 
 ## 11. Hosting & Deployment
 
-### Recommended Setup (Supabase-first)
+### Recommended Setup
 
-| Componente | Servicio | Costo |
+| Component | Service | Cost |
 |-----------|---------|------|
-| Frontend + API Routes | **Vercel** (free tier) | $0/mes |
-| Base de datos + Auth + Storage | **Supabase** (free tier: 500 MB DB, 1 GB storage) | $0/mes |
-| Dominio | Dominio actual | Ya poseído |
+| Frontend | **Vercel** (free tier) | $0/month |
+| Backend API | **Railway** or **Render** | $5–7/month |
+| Database | **Railway PostgreSQL** or **Supabase** | $0–5/month |
+| Media storage | **Cloudinary** (free tier) or **AWS S3** | $0–3/month |
+| Domain | Current domain | Already owned |
 
-**Costo estimado: $0/mes** en el tier gratuito (vs. $5–15/mes del plan original)
+**Estimated total: $5–15/month** (vs. current $0 for static hosting)
 
-### Límites del Free Tier de Supabase
-| Recurso | Límite gratuito | Suficiente para? |
-|---------|----------------|-----------------|
-| Base de datos | 500 MB | Sí — contenido de la app cabe en < 50 MB |
-| Storage | 1 GB | Sí — para imágenes del sitio |
-| Usuarios Auth | Ilimitado | Sí |
-| Bandwidth | 5 GB/mes | Sí — sitio de comunidad pequeña |
-| Edge Functions | 500K invocaciones/mes | Sí |
-
-> Si el proyecto escala, Supabase Pro es $25/mes con 8 GB DB + 100 GB storage — aún más económico que el plan original de $5–15/mes.
+### Alternative: All-in-One
+If budget is a concern, the entire stack (Next.js + API + PostgreSQL) can be deployed to a **single VPS** on DigitalOcean ($6/month) or Render.
 
 ---
 

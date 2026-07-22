@@ -7,11 +7,13 @@
     <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
     <title>Administración | CCI AL/Colombia</title>
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
     <style>
         body { background: #f4f5f7; }
         .celda-texto { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #vista-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .nav-pills .nav-link { cursor: pointer; }
+        .ql-editor { min-height: 150px; background: #fff; }
     </style>
 </head>
 
@@ -83,6 +85,7 @@
 
     <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
     <script>
         const supabaseClient = supabase.createClient(
             "https://gmcuzmsckwtdvurboobh.supabase.co",
@@ -98,6 +101,15 @@
             { campo: "orden", etiqueta: "Orden", tipo: "number" },
             { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
         ];
+        const CAMPOS_FINCAS = [
+            { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
+            { campo: "lugar", etiqueta: "Lugar", tipo: "text" },
+            { campo: "ciudad", etiqueta: "Ciudad", tipo: "text" },
+            { campo: "contacto", etiqueta: "Contacto", tipo: "text" },
+            { campo: "capacidad", etiqueta: "Capacidad", tipo: "number" },
+            { campo: "orden", etiqueta: "Orden", tipo: "number" },
+            { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+        ];
         const CAMPOS_CURSO = [
             { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
             { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
@@ -108,7 +120,7 @@
         ];
 
         const TABLAS = {
-            fincas: { titulo: "Fincas", pk: "id", campos: CAMPOS_RECURSO },
+            fincas: { titulo: "Fincas", pk: "id", campos: CAMPOS_FINCAS },
             transporte: { titulo: "Transporte", pk: "id", campos: CAMPOS_RECURSO },
             juegos: { titulo: "Juegos con propósito", pk: "id", campos: CAMPOS_RECURSO },
             cocina: { titulo: "Cocina", pk: "id", campos: CAMPOS_RECURSO },
@@ -117,7 +129,8 @@
                 titulo: "Testimonios", pk: "id", campos: [
                     { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
                     { campo: "rol", etiqueta: "Rol o ministerio", tipo: "text" },
-                    { campo: "mensaje", etiqueta: "Testimonio", tipo: "textarea", requerido: true },
+                    { campo: "foto_url", etiqueta: "Foto", tipo: "image", bucket: "testimonios" },
+                    { campo: "mensaje", etiqueta: "Testimonio", tipo: "richtext", requerido: true },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
                     { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
                 ]
@@ -151,6 +164,13 @@
         let tablaActual = "fincas";
         let filaEditando = null;
         let modalEdicion = null;
+        let editoresRichText = {};
+
+        function obtenerTextoPlano(html) {
+            const div = document.createElement("div");
+            div.innerHTML = html || "";
+            return div.textContent || "";
+        }
 
         function escaparHtml(texto) {
             const div = document.createElement("div");
@@ -251,6 +271,15 @@
                         return '<td><span class="badge bg-' + (valor ? "success" : "secondary") + '">' +
                             (valor ? "Sí" : "No") + "</span></td>";
                     }
+                    if (c.tipo === "image") {
+                        return valor
+                            ? '<td><img src="' + escaparHtml(valor) + '" alt="Foto" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></td>'
+                            : '<td class="text-muted">Sin foto</td>';
+                    }
+                    if (c.tipo === "richtext") {
+                        const textoPlano = obtenerTextoPlano(valor);
+                        return '<td class="celda-texto" title="' + escaparHtml(textoPlano) + '">' + escaparHtml(textoPlano) + "</td>";
+                    }
                     return '<td class="celda-texto" title="' + escaparHtml(valor) + '">' + escaparHtml(valor) + "</td>";
                 }).join("");
                 return "<tr>" + celdas +
@@ -274,8 +303,22 @@
                 (filaEditando ? "Editar" : "Agregar") + " — " + def.titulo;
             document.getElementById("modal-error").style.display = "none";
 
+            // Calcular siguiente orden disponible cuando se está agregando
+            let siguienteOrden = null;
+            if (!filaEditando) {
+                const filasExistentes = cargarDatos.filas || [];
+                if (def.campos.some(function (x) { return x.campo === "orden"; })) {
+                    let maxOrden = 0;
+                    filasExistentes.forEach(function (f) {
+                        const o = Number(f.orden);
+                        if (!isNaN(o) && o > maxOrden) maxOrden = o;
+                    });
+                    siguienteOrden = maxOrden + 1;
+                }
+            }
+
             document.getElementById("modal-campos").innerHTML = def.campos.map(function (c) {
-                const valor = filaEditando ? filaEditando[c.campo] : null;
+                const valor = filaEditando ? filaEditando[c.campo] : (c.campo === "orden" && siguienteOrden != null ? siguienteOrden : null);
                 if (c.tipo === "checkbox") {
                     return '<div class="form-check form-switch mb-3">' +
                         '<input class="form-check-input" type="checkbox" id="campo-' + c.campo + '"' +
@@ -288,10 +331,44 @@
                     return '<div class="mb-3">' + etiqueta +
                         '<textarea class="form-control" rows="4" id="campo-' + c.campo + '">' + escaparHtml(valor) + "</textarea></div>";
                 }
+                if (c.tipo === "image") {
+                    return '<div class="mb-3">' + etiqueta +
+                        (valor
+                            ? '<div class="mb-2"><img src="' + escaparHtml(valor) + '" alt="Foto actual" style="max-height:120px;border-radius:8px;display:block;"></div>'
+                            : "") +
+                        '<input class="form-control" type="file" accept="image/*" id="campo-' + c.campo + '">' +
+                        (valor
+                            ? '<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="campo-' + c.campo + '-quitar">' +
+                              '<label class="form-check-label" for="campo-' + c.campo + '-quitar">Quitar foto actual</label></div>'
+                            : "") +
+                        "</div>";
+                }
+                if (c.tipo === "richtext") {
+                    return '<div class="mb-3">' + etiqueta +
+                        '<div id="campo-' + c.campo + '"></div></div>';
+                }
                 return '<div class="mb-3">' + etiqueta +
                     '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +
                     '" value="' + escaparHtml(valor) + '"></div>';
             }).join("");
+
+            editoresRichText = {};
+            def.campos.forEach(function (c) {
+                if (c.tipo !== "richtext") return;
+                const instancia = new Quill("#campo-" + c.campo, {
+                    theme: "snow",
+                    modules: {
+                        toolbar: [
+                            ["bold", "italic", "underline"],
+                            [{ align: [] }],
+                            ["clean"]
+                        ]
+                    }
+                });
+                const valorInicial = filaEditando ? filaEditando[c.campo] : null;
+                if (valorInicial) instancia.root.innerHTML = valorInicial;
+                editoresRichText[c.campo] = instancia;
+            });
 
             modalEdicion.show();
         }
@@ -302,6 +379,45 @@
             const errorModal = document.getElementById("modal-error");
 
             for (const c of def.campos) {
+                if (c.tipo === "image") {
+                    const inputArchivo = document.getElementById("campo-" + c.campo);
+                    const checkboxQuitar = document.getElementById("campo-" + c.campo + "-quitar");
+                    const archivo = inputArchivo.files[0];
+
+                    if (archivo) {
+                        const rutaArchivo = tablaActual + "/" + Date.now() + "-" +
+                            archivo.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+                        const { error: errorSubida } = await supabaseClient.storage
+                            .from(c.bucket).upload(rutaArchivo, archivo, { upsert: true });
+                        if (errorSubida) {
+                            errorModal.textContent = "Error al subir la foto: " + errorSubida.message;
+                            errorModal.style.display = "inline";
+                            return;
+                        }
+                        const { data: urlData } = supabaseClient.storage.from(c.bucket).getPublicUrl(rutaArchivo);
+                        registro[c.campo] = urlData.publicUrl;
+                    } else if (checkboxQuitar && checkboxQuitar.checked) {
+                        registro[c.campo] = null;
+                    } else if (filaEditando) {
+                        registro[c.campo] = filaEditando[c.campo];
+                    } else {
+                        registro[c.campo] = null;
+                    }
+                    continue;
+                }
+
+                if (c.tipo === "richtext") {
+                    const instancia = editoresRichText[c.campo];
+                    const textoPlano = instancia.getText().trim();
+                    if (c.requerido && textoPlano === "") {
+                        errorModal.textContent = 'El campo "' + c.etiqueta + '" es obligatorio.';
+                        errorModal.style.display = "inline";
+                        return;
+                    }
+                    registro[c.campo] = textoPlano === "" ? null : instancia.root.innerHTML;
+                    continue;
+                }
+
                 const control = document.getElementById("campo-" + c.campo);
                 let valor;
                 if (c.tipo === "checkbox") {

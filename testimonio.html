@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
+    <title>Testimonio | CCI AL/Colombia</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/theme/css/style.css">
+    <style>
+        body { background: #f4f5f7; }
+        .contenedor-testimonio { max-width: 700px; margin: 3rem auto; padding: 0 1rem; }
+        .ql-align-center { text-align: center; }
+        .ql-align-right { text-align: right; }
+        .ql-align-justify { text-align: justify; }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        if (sessionStorage.getItem("auth") !== "true") {
+            window.location.href = "index.html";
+        }
+    </script>
+
+    <div class="contenedor-testimonio">
+        <div class="card shadow-sm">
+            <div class="card-body p-4" id="contenido-testimonio">
+                <p class="text-muted">Cargando testimonio...</p>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <a href="comunidad.html" class="text-primary">&larr; Volver a Comunidad</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseClient = supabase.createClient(
+            "https://gmcuzmsckwtdvurboobh.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk",
+            { global: { fetch: (url, options) => fetch(url, Object.assign({}, options, { cache: "no-store" })) } }
+        );
+
+        function escaparHtml(texto) {
+            const div = document.createElement("div");
+            div.textContent = texto == null ? "" : String(texto);
+            return div.innerHTML;
+        }
+
+        async function cargarTestimonio() {
+            const contenedor = document.getElementById("contenido-testimonio");
+            const parametros = new URLSearchParams(window.location.search);
+            const id = parametros.get("id");
+
+            if (!id) {
+                contenedor.innerHTML = '<p class="text-danger mb-0">No se especificó ningún testimonio.</p>';
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from("testimonios")
+                .select("nombre, rol, mensaje, foto_url")
+                .eq("id", id)
+                .eq("visible", true)
+                .maybeSingle();
+
+            if (error || !data) {
+                contenedor.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el testimonio.</p>';
+                return;
+            }
+
+            const encabezado =
+                '<div class="d-flex align-items-center mb-4">' +
+                (data.foto_url
+                    ? '<img src="' + escaparHtml(data.foto_url) + '" alt="Foto de ' + escaparHtml(data.nombre) +
+                      '" class="rounded-circle flex-shrink-0" style="width:90px;height:90px;object-fit:cover;">'
+                    : "") +
+                '<div class="' + (data.foto_url ? "ms-3" : "") + ' text-start">' +
+                '<h5 class="mb-0">' + escaparHtml(data.nombre) + "</h5>" +
+                (data.rol ? '<small class="text-muted">' + escaparHtml(data.rol) + "</small>" : "") +
+                "</div></div>";
+
+            contenedor.innerHTML = encabezado +
+                '<div class="mbr-text mbr-fonts-style" style="font-size:1.15rem;">' + (data.mensaje || "") + "</div>";
+        }
+
+        cargarTestimonio();
+    </script>
+</body>
+
+</html>
