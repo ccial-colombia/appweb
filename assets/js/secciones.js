@@ -66,10 +66,41 @@
         });
     }
 
+    // Inserta el contenido con formato (tabla contenido_secciones) en los
+    // marcadores <... data-contenido="clave">. Solo se consulta si la página
+    // tiene al menos un marcador, así las demás no pagan la consulta extra.
+    function aplicarContenido(cliente) {
+        var marcadores = document.querySelectorAll("[data-contenido]");
+        if (marcadores.length === 0) return Promise.resolve();
+
+        var claves = [];
+        Array.prototype.forEach.call(marcadores, function (m) {
+            var clave = m.getAttribute("data-contenido");
+            if (claves.indexOf(clave) === -1) claves.push(clave);
+        });
+
+        return cliente
+            .from("contenido_secciones")
+            .select("seccion_clave, contenido")
+            .in("seccion_clave", claves)
+            .then(function (respuesta) {
+                if (!respuesta || respuesta.error || !respuesta.data) return;
+                var porClave = {};
+                respuesta.data.forEach(function (fila) {
+                    porClave[fila.seccion_clave] = fila.contenido;
+                });
+                Array.prototype.forEach.call(marcadores, function (m) {
+                    var clave = m.getAttribute("data-contenido");
+                    if (porClave[clave] != null) m.innerHTML = porClave[clave];
+                });
+            });
+    }
+
     function aplicarSecciones() {
+        var cliente;
         cargarLibreria()
             .then(function () {
-                var cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                     global: {
                         fetch: function (url, opciones) {
                             return fetch(url, Object.assign({}, opciones, { cache: "no-store" }));
@@ -83,6 +114,7 @@
             })
             .then(function (respuesta) {
                 if (respuesta && !respuesta.error && respuesta.data) aplicar(respuesta.data);
+                return aplicarContenido(cliente);
             })
             .catch(function () {
                 // Ante cualquier error se deja la página tal como está en el HTML.

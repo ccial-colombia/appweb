@@ -64,15 +64,27 @@ create table if not exists public.informacion_general (
   visible boolean not null default true
 );
 
+-- Contenido con formato de cada sección (una fila por sección).
+-- Ver también: contenido_secciones.sql
+create table if not exists public.contenido_secciones (
+  id serial primary key,
+  seccion_clave text not null unique
+    references public.informacion_general(clave) on delete cascade,
+  contenido text,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.cursos               enable row level security;
 alter table public.talleres             enable row level security;
 alter table public.videos               enable row level security;
 alter table public.informacion_general  enable row level security;
+alter table public.contenido_secciones  enable row level security;
 
 create policy "lectura publica" on public.cursos              for select using (true);
 create policy "lectura publica" on public.talleres            for select using (true);
 create policy "lectura publica" on public.videos              for select using (true);
 create policy "lectura publica" on public.informacion_general for select using (true);
+create policy "lectura publica" on public.contenido_secciones for select using (true);
 
 -- ---------- Permisos de administración ----------
 -- Los usuarios autenticados pueden hacer TODO en todas las tablas.
@@ -88,4 +100,5 @@ create policy "admin total" on public.cursos              for all to authenticat
 create policy "admin total" on public.talleres            for all to authenticated using (true) with check (true);
 create policy "admin total" on public.videos              for all to authenticated using (true) with check (true);
 create policy "admin total" on public.informacion_general for all to authenticated using (true) with check (true);
+create policy "admin total" on public.contenido_secciones for all to authenticated using (true) with check (true);
 create policy "admin total" on public.psw_change          for all to authenticated using (true) with check (true);

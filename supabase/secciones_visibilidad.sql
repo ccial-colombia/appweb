@@ -35,6 +35,8 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('inicio.html', 'inicio.galeria', 'Galería de fotos', 1, true),
   ('inicio.html', 'inicio.encabezado', 'Equipando a quienes impactan vidas', 2, true),
   ('inicio.html', 'inicio.vision_mision', 'Visión y misión', 3, true),
+  ('inicio.html', 'inicio.vision', 'Visión (texto)', 3, true),
+  ('inicio.html', 'inicio.mision', 'Misión (texto)', 3, true),
   ('inicio.html', 'inicio.quienes_somos', 'Quiénes somos', 4, true),
 
   ('comunidad.html', 'comunidad.somos_familia', 'Somos familia', 1, true),

@@ -13,7 +13,11 @@
         .celda-texto { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #vista-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .nav-pills .nav-link { cursor: pointer; }
-        .ql-editor { min-height: 150px; background: #fff; }
+        /* Editor de texto amplio, estilo procesador de texto */
+        .ql-container { font-size: 1rem; }
+        .ql-editor { min-height: 340px; max-height: 60vh; overflow-y: auto; background: #fff; }
+        .ql-toolbar.ql-snow { position: sticky; top: 0; z-index: 2; background: #fff; border-radius: 4px 4px 0 0; }
+        .ql-toolbar .ql-undo, .ql-toolbar .ql-redo { width: 28px; }
     </style>
 </head>
 
@@ -67,7 +71,7 @@
 
     <!-- ==================== MODAL AGREGAR / EDITAR ==================== -->
     <div class="modal fade" id="modal-edicion" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog" id="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modal-titulo"></h5>
@@ -163,12 +167,17 @@
             },
             informacion_general: {
                 titulo: "Secciones de la web", pk: "id", campos: [
-                    { campo: "pagina", etiqueta: "Página", tipo: "select", opciones: PAGINAS },
+                    { campo: "pagina", etiqueta: "Página", tipo: "select", opciones: PAGINAS, placeholder: "— Sin página —" },
                     { campo: "titulo", etiqueta: "Sección", tipo: "text" },
                     { campo: "clave", etiqueta: "Clave (identificador único)", tipo: "text", requerido: true },
-                    { campo: "contenido", etiqueta: "Contenido", tipo: "textarea" },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
                     { campo: "visible", etiqueta: "Habilitado en la web", tipo: "checkbox" }
+                ]
+            },
+            contenido_secciones: {
+                titulo: "Contenido de secciones", pk: "id", campos: [
+                    { campo: "seccion_clave", etiqueta: "Sección", tipo: "select", opcionesDinamicas: "secciones", placeholder: "— Elegir sección —", requerido: true },
+                    { campo: "contenido", etiqueta: "Contenido", tipo: "richtext" }
                 ]
             },
             psw_change: {
@@ -183,6 +192,26 @@
         let filaEditando = null;
         let modalEdicion = null;
         let editoresRichText = {};
+        // Secciones disponibles para los selectores dinámicos (Contenido de secciones).
+        let seccionesDisponibles = [];
+
+        // Trae el catálogo de secciones desde informacion_general para poder
+        // elegirlas en un desplegable con un nombre legible (página · sección).
+        async function cargarSeccionesDisponibles() {
+            const { data } = await supabaseClient
+                .from("informacion_general")
+                .select("clave, pagina, titulo, orden")
+                .order("pagina", { ascending: true })
+                .order("orden", { ascending: true });
+            seccionesDisponibles = data || [];
+        }
+
+        // Nombre legible de una sección a partir de su clave.
+        function etiquetaSeccion(clave) {
+            const s = seccionesDisponibles.find(function (x) { return x.clave === clave; });
+            if (!s) return clave;
+            return (s.pagina ? s.pagina + " · " : "") + (s.titulo || s.clave);
+        }
 
         function obtenerTextoPlano(html) {
             const div = document.createElement("div");
@@ -232,6 +261,7 @@
             document.getElementById("vista-panel").style.display = "block";
             document.getElementById("usuario-email").textContent =
                 session.user.user_metadata.display_name || session.user.email;
+            await cargarSeccionesDisponibles();
             construirMenu();
             seleccionarTabla(tablaActual);
         }
@@ -299,6 +329,10 @@
                         const textoPlano = obtenerTextoPlano(valor);
                         return '<td class="celda-texto" title="' + escaparHtml(textoPlano) + '">' + escaparHtml(textoPlano) + "</td>";
                     }
+                    if (c.tipo === "select" && c.opcionesDinamicas === "secciones") {
+                        const texto = etiquetaSeccion(valor);
+                        return '<td class="celda-texto" title="' + escaparHtml(texto) + '">' + escaparHtml(texto) + "</td>";
+                    }
                     return '<td class="celda-texto" title="' + escaparHtml(valor) + '">' + escaparHtml(valor) + "</td>";
                 }).join("");
                 return "<tr>" + celdas +
@@ -313,10 +347,15 @@
 
         // ==================== AGREGAR / EDITAR / ELIMINAR ====================
 
-        function abrirFormulario(pkValor) {
+        async function abrirFormulario(pkValor) {
             const def = TABLAS[tablaActual];
             filaEditando = pkValor == null ? null :
                 (cargarDatos.filas || []).find(function (f) { return f[def.pk] === pkValor; });
+
+            // Refresca la lista de secciones si el formulario tiene un selector dinámico.
+            if (def.campos.some(function (c) { return c.opcionesDinamicas === "secciones"; })) {
+                await cargarSeccionesDisponibles();
+            }
 
             document.getElementById("modal-titulo").textContent =
                 (filaEditando ? "Editar" : "Agregar") + " — " + def.titulo;
@@ -367,38 +406,80 @@
                         '<div id="campo-' + c.campo + '"></div></div>';
                 }
                 if (c.tipo === "select") {
-                    const opciones = (c.opciones || []).map(function (opcion) {
-                        return '<option value="' + escaparHtml(opcion) + '"' +
-                            (opcion === valor ? " selected" : "") + ">" + escaparHtml(opcion) + "</option>";
+                    const lista = c.opcionesDinamicas === "secciones"
+                        ? seccionesDisponibles.map(function (s) {
+                            return { valor: s.clave, texto: etiquetaSeccion(s.clave) };
+                        })
+                        : (c.opciones || []).map(function (o) { return { valor: o, texto: o }; });
+                    const opciones = lista.map(function (o) {
+                        return '<option value="' + escaparHtml(o.valor) + '"' +
+                            (o.valor === valor ? " selected" : "") + ">" + escaparHtml(o.texto) + "</option>";
                     }).join("");
+                    const placeholder = c.placeholder || "— Seleccionar —";
                     return '<div class="mb-3">' + etiqueta +
                         '<select class="form-select" id="campo-' + c.campo + '">' +
-                        '<option value="">— Sin página —</option>' + opciones + "</select></div>";
+                        '<option value="">' + escaparHtml(placeholder) + "</option>" + opciones + "</select></div>";
                 }
                 return '<div class="mb-3">' + etiqueta +
                     '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +
                     '" value="' + escaparHtml(valor) + '"></div>';
             }).join("");
 
+            // Modal más ancho cuando el formulario tiene un editor de texto.
+            const tieneRichtext = def.campos.some(function (c) { return c.tipo === "richtext"; });
+            document.getElementById("modal-dialog").className =
+                "modal-dialog" + (tieneRichtext ? " modal-lg modal-dialog-scrollable" : "");
+
             editoresRichText = {};
             def.campos.forEach(function (c) {
                 if (c.tipo !== "richtext") return;
-                const instancia = new Quill("#campo-" + c.campo, {
-                    theme: "snow",
-                    modules: {
-                        toolbar: [
-                            ["bold", "italic", "underline"],
-                            [{ align: [] }],
-                            ["clean"]
-                        ]
-                    }
-                });
+                const instancia = crearEditor("#campo-" + c.campo);
                 const valorInicial = filaEditando ? filaEditando[c.campo] : null;
                 if (valorInicial) instancia.root.innerHTML = valorInicial;
                 editoresRichText[c.campo] = instancia;
             });
 
             modalEdicion.show();
+        }
+
+        // Registra íconos de deshacer/rehacer una sola vez para el editor.
+        (function registrarIconosEditor() {
+            const iconos = Quill.import("ui/icons");
+            iconos["undo"] =
+                '<svg viewbox="0 0 18 18"><polygon class="ql-fill ql-stroke" points="6 10 4 12 2 10 6 10"></polygon>' +
+                '<path class="ql-stroke" d="M8.09,13.91A4.6,4.6,0,0,0,9,14,5,5,0,1,0,4,9"></path></svg>';
+            iconos["redo"] =
+                '<svg viewbox="0 0 18 18"><polygon class="ql-fill ql-stroke" points="12 10 14 12 16 10 12 10"></polygon>' +
+                '<path class="ql-stroke" d="M9.91,13.91A4.6,4.6,0,0,1,9,14,5,5,0,1,1,14,9"></path></svg>';
+        })();
+
+        // Editor de texto amplio (estilo procesador de texto).
+        function crearEditor(selector) {
+            return new Quill(selector, {
+                theme: "snow",
+                placeholder: "Escribe aquí...",
+                modules: {
+                    history: { delay: 800, maxStack: 200, userOnly: true },
+                    toolbar: {
+                        container: [
+                            ["undo", "redo"],
+                            [{ header: [1, 2, 3, 4, false] }],
+                            [{ size: ["small", false, "large", "huge"] }],
+                            ["bold", "italic", "underline", "strike"],
+                            [{ color: [] }, { background: [] }],
+                            [{ align: [] }],
+                            [{ list: "ordered" }, { list: "bullet" }],
+                            [{ indent: "-1" }, { indent: "+1" }],
+                            ["blockquote", "link"],
+                            ["clean"]
+                        ],
+                        handlers: {
+                            undo: function () { this.quill.history.undo(); },
+                            redo: function () { this.quill.history.redo(); }
+                        }
+                    }
+                }
+            });
         }
 
         async function guardar() {
