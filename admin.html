@@ -92,8 +92,21 @@
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
         );
 
+        // Páginas del sitio con secciones que se pueden habilitar o deshabilitar.
+        const PAGINAS = [
+            "index.html",
+            "inicio.html",
+            "comunidad.html",
+            "equipados.html",
+            "exclusivo.html",
+            "campatienda.html",
+            "enciclopedia.html",
+            "normas.html",
+            "valores.html"
+        ];
+
         // Definición de cada tabla administrable y sus campos.
-        // tipo: text | textarea | number | date | checkbox
+        // tipo: text | textarea | number | date | checkbox | select | image | richtext
         const CAMPOS_RECURSO = [
             { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
             { campo: "lugar", etiqueta: "Lugar", tipo: "text" },
@@ -110,11 +123,13 @@
             { campo: "orden", etiqueta: "Orden", tipo: "number" },
             { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
         ];
+        // Cursos y talleres comparten estructura. Las imágenes van al bucket
+        // "contenido", en una carpeta por tabla (cursos/ y talleres/).
         const CAMPOS_CURSO = [
-            { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
-            { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
-            { campo: "enlace", etiqueta: "Enlace", tipo: "text" },
-            { campo: "fecha", etiqueta: "Fecha", tipo: "date" },
+            { campo: "imagen_url", etiqueta: "Imagen", tipo: "image", bucket: "contenido" },
+            { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
+            { campo: "descripcion_corta", etiqueta: "Descripción corta", tipo: "text" },
+            { campo: "descripcion", etiqueta: "Descripción", tipo: "richtext" },
             { campo: "orden", etiqueta: "Orden", tipo: "number" },
             { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
         ];
@@ -147,10 +162,13 @@
                 ]
             },
             informacion_general: {
-                titulo: "Información general", pk: "id", campos: [
+                titulo: "Secciones de la web", pk: "id", campos: [
+                    { campo: "pagina", etiqueta: "Página", tipo: "select", opciones: PAGINAS },
+                    { campo: "titulo", etiqueta: "Sección", tipo: "text" },
                     { campo: "clave", etiqueta: "Clave (identificador único)", tipo: "text", requerido: true },
-                    { campo: "titulo", etiqueta: "Título", tipo: "text" },
-                    { campo: "contenido", etiqueta: "Contenido", tipo: "textarea" }
+                    { campo: "contenido", etiqueta: "Contenido", tipo: "textarea" },
+                    { campo: "orden", etiqueta: "Orden", tipo: "number" },
+                    { campo: "visible", etiqueta: "Habilitado en la web", tipo: "checkbox" }
                 ]
             },
             psw_change: {
@@ -242,10 +260,11 @@
             mostrarAlerta("");
 
             let consulta = supabaseClient.from(tablaActual).select("*");
+            const tienePagina = def.campos.some(function (c) { return c.campo === "pagina"; });
             const tieneOrden = def.campos.some(function (c) { return c.campo === "orden"; });
-            consulta = tieneOrden
-                ? consulta.order("orden", { ascending: true }).order(def.pk, { ascending: true })
-                : consulta.order(def.pk, { ascending: true });
+            if (tienePagina) consulta = consulta.order("pagina", { ascending: true });
+            if (tieneOrden) consulta = consulta.order("orden", { ascending: true });
+            consulta = consulta.order(def.pk, { ascending: true });
 
             const { data, error } = await consulta;
             if (error) {
@@ -346,6 +365,15 @@
                 if (c.tipo === "richtext") {
                     return '<div class="mb-3">' + etiqueta +
                         '<div id="campo-' + c.campo + '"></div></div>';
+                }
+                if (c.tipo === "select") {
+                    const opciones = (c.opciones || []).map(function (opcion) {
+                        return '<option value="' + escaparHtml(opcion) + '"' +
+                            (opcion === valor ? " selected" : "") + ">" + escaparHtml(opcion) + "</option>";
+                    }).join("");
+                    return '<div class="mb-3">' + etiqueta +
+                        '<select class="form-select" id="campo-' + c.campo + '">' +
+                        '<option value="">— Sin página —</option>' + opciones + "</select></div>";
                 }
                 return '<div class="mb-3">' + etiqueta +
                     '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +

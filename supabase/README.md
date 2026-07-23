@@ -6,6 +6,18 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 
 - `migrations/20260623000000_initial_schema.sql`: esquema inicial, RLS, funciones, triggers y buckets de Storage.
 - `seed.sql`: datos base del sitio actual: paginas, navegacion, redes, secciones principales, galerias, videos, cursos, talleres y eventos.
+- `supabase_backend.sql`: tablas que usa el panel `admin.html` (fincas, transporte, juegos, cocina, graficos, testimonios, cursos, talleres, videos, informacion_general, psw_change).
+- `secciones_visibilidad.sql`: agrega a `informacion_general` las columnas `pagina`, `orden` y `visible`, y carga el catalogo de secciones visuales de cada pagina.
+
+## Secciones visuales
+
+Cada bloque administrable del HTML lleva `data-seccion="clave"` y `assets/js/secciones.js`
+(incluido en el `<head>` de cada pagina) consulta `informacion_general` filtrando por el
+nombre del archivo. Los bloques con `visible = false` se quitan al cargar la pagina; los
+que no tengan fila en la tabla se muestran siempre.
+
+Para agregar una seccion nueva: pon `data-seccion="pagina.clave"` en el HTML e inserta la
+fila correspondiente en `informacion_general` (o desde el panel, en "Secciones de la web").
 
 ## Orden de ejecucion
 

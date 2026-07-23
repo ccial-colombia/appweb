@@ -19,22 +19,24 @@
 
 -- ---------- Tablas nuevas de contenido ----------
 
+-- Ver también: cursos_talleres.sql (migración de la estructura anterior
+-- y bucket "contenido" donde se guardan las imágenes).
 create table if not exists public.cursos (
   id serial primary key,
-  titulo text not null,
+  imagen_url text,           -- imagen subida desde el panel
+  nombre text not null,
+  descripcion_corta text,    -- frase breve que acompaña al nombre
   descripcion text,
-  enlace text,               -- URL de inscripción o material (opcional)
-  fecha date,                -- fecha del curso (opcional)
   orden int default 0,
   visible boolean default true
 );
 
 create table if not exists public.talleres (
   id serial primary key,
-  titulo text not null,
+  imagen_url text,
+  nombre text not null,
+  descripcion_corta text,
   descripcion text,
-  enlace text,
-  fecha date,
   orden int default 0,
   visible boolean default true
 );
@@ -48,13 +50,18 @@ create table if not exists public.videos (
   visible boolean default true
 );
 
--- Textos generales editables (título/párrafos que quieras
--- administrar sin tocar código; cada fila es un texto con su clave)
+-- Secciones visuales de cada página (y textos generales editables).
+-- Cada fila es una parte de una página que se puede habilitar o
+-- deshabilitar desde el panel de administración.
+-- Ver también: secciones_visibilidad.sql (catálogo de secciones).
 create table if not exists public.informacion_general (
   id serial primary key,
-  clave text unique not null,   -- identificador, ej: 'bienvenida_campatienda'
-  titulo text,
-  contenido text
+  pagina text,                  -- archivo html, ej: 'comunidad.html'
+  clave text unique not null,   -- identificador usado en data-seccion, ej: 'comunidad.fincas'
+  titulo text,                  -- nombre de la sección en el panel
+  contenido text,
+  orden int default 0,
+  visible boolean not null default true
 );
 
 alter table public.cursos               enable row level security;
