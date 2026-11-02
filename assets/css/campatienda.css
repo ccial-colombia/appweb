@@ -1,0 +1,210 @@
+/* CampaTienda: catálogo de productos (campatienda.html).
+   Las tarjetas las arma assets/js/campatienda.js con los datos de la tabla "productos". */
+
+.ct-productos {
+  padding: 1rem 0 4rem;
+  background-color: #ffffff;
+}
+
+.ct-titulo {
+  font-family: 'Jost', sans-serif;
+  font-size: 2.2rem;
+  line-height: 1.3;
+  color: #045e5c;
+  text-align: center;
+  margin: 0 0 2rem;
+}
+
+.ct-estado {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: #555555;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+/* ---------- Tarjeta de producto ---------- */
+
+.ct-producto {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(5, 56, 107, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ct-producto:hover {
+  box-shadow: 0 8px 24px rgba(5, 56, 107, 0.14);
+  transform: translateY(-2px);
+}
+
+/* Las fotos tienen orientaciones distintas: todas caben completas en un marco 4:3. */
+.ct-producto-foto {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  background: #ffffff;
+}
+
+button.ct-producto-foto {
+  cursor: zoom-in;
+}
+
+button.ct-producto-foto:focus-visible {
+  outline: 3px solid #05386b;
+  outline-offset: -3px;
+}
+
+/* Posición absoluta: así una foto vertical no estira el marco (ni la tarjeta). */
+.ct-producto-foto img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ct-producto-foto.sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+  color: #8a8f98;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+}
+
+.ct-agotado-etiqueta {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #6c757d;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ct-producto.agotado .ct-producto-foto img {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.ct-producto-cuerpo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid #eef0f2;
+}
+
+.ct-producto-nombre {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #05386b;
+  margin: 0 0 0.5rem;
+}
+
+.ct-producto-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #444444;
+  margin: 0 0 0.75rem;
+  white-space: pre-line;
+}
+
+.ct-producto-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.ct-producto-opciones li {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #e7f3f2;
+  color: #045e5c;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Precio arriba y botón a todo el ancho: igual en todas las tarjetas, con o sin precio. */
+.ct-producto-pie {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.ct-producto-precio {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #232323;
+}
+
+.ct-producto-precio.consultar {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666666;
+}
+
+/* El tema le pone márgenes y relleno grandes a .btn; aquí se ajustan a la tarjeta. */
+.ct-producto .ct-btn-pedir {
+  margin: 0;
+  padding: 0.5rem 1.4rem;
+  justify-content: center;
+  text-align: center;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+}
+
+/* ---------- Foto ampliada ---------- */
+
+/* El tema pone .modal-content { height: 100% }; aquí el modal se ajusta a la foto. */
+#ct-modal-foto .modal-content {
+  height: auto;
+}
+
+#ct-modal-foto .modal-body {
+  padding: 0.5rem;
+  background: #ffffff;
+}
+
+#ct-modal-foto img {
+  display: block;
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+#ct-modal-foto .modal-title {
+  font-family: 'Jost', sans-serif;
+  color: #05386b;
+}
+
+@media (max-width: 575px) {
+  .ct-titulo {
+    font-size: 1.8rem;
+  }
+}

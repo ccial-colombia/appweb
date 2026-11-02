@@ -10,6 +10,7 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 - `secciones_visibilidad.sql`: agrega a `informacion_general` las columnas `pagina`, `orden` y `visible`, y carga el catalogo de secciones visuales de cada pagina.
 - `contenido_secciones.sql`: crea la tabla `contenido_secciones`, que asocia cada seccion (`informacion_general.clave`) con un texto con formato editable desde el panel.
 - `cursos_talleres.sql` / `cursos_talleres_datos.sql`: nueva estructura de `cursos` y `talleres` (imagen, nombre, descripcion corta, descripcion, orden, visible) y carga de los datos actuales.
+- `campatienda_productos.sql`: crea la tabla `productos` (foto, nombre, descripcion, precio, tallas u opciones, disponible, orden, visible) que muestra `campatienda.html` y se administra en el panel, pestaña "CampaTienda". Carga los 7 productos iniciales con sus fotos de `assets/images/campatienda/`. Se puede ejecutar mas de una vez.
 
 ## Secciones visuales
 

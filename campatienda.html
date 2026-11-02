@@ -33,6 +33,7 @@
     </noscript>
     <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=E8brTU">
     <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=E8brTU" type="text/css">
+    <link rel="stylesheet" href="assets/css/campatienda.css">
 
 
 
@@ -115,7 +116,7 @@
                         <br>Como miembro, al renovar tu membresía podrás recibir regalos exclusivos como una forma 
                         de agradecer tu compromiso y caminar junto a nosotros en este ministerio.<br>
                         <br><strong>¿Te interesa algún producto?<br>
-                        <br>Escríbenos a <a href="mailto:comunicacionesccialcol@gmail.com?subject=CampaTienda"
+                        <br>Haz clic en «Pedir» en el producto que quieras o escríbenos a:<br><a href="mailto:comunicacionesccialcol@gmail.com?subject=CampaTienda"
                             class="text-primary">comunicacionesccialcol@gmail.com</a></strong></p>
 
                 </div>
@@ -123,51 +124,30 @@
         </div>
     </section>
 
-    <section data-bs-version="5.1" class="gallery3 cid-v5Mm2OtpJZ" data-seccion="campatienda.galeria" id="gallery3-3q">
+    <!-- Catálogo: las tarjetas se arman con assets/js/campatienda.js a partir de la
+         tabla "productos" de Supabase (admin.html > CampaTienda). -->
+    <section data-bs-version="5.1" class="ct-productos" data-seccion="campatienda.galeria" id="productos">
+        <div class="container">
+            <h2 class="ct-titulo"><strong>Nuestros productos</strong></h2>
+            <p id="ct-estado" class="ct-estado" role="status">Cargando productos…</p>
+            <div id="ct-lista" class="row g-4 justify-content-center"></div>
+        </div>
+    </section>
 
-
-        <div class="container-fluid">
-
-            <div class="row mt-4">
-                <div class="item features-image col-12 col-md-6 col-lg-3">
-                    <div class="item-wrapper">
-                        <div class="item-img">
-                            <img src="assets/images/features1.jpg" alt="Producto de CampaTienda 1">
-                        </div>
-
-
-                    </div>
+    <!-- Foto ampliada de un producto -->
+    <div class="modal fade" id="ct-modal-foto" tabindex="-1" aria-labelledby="ct-modal-titulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ct-modal-titulo"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="item features-image col-12 col-md-6 col-lg-3">
-                    <div class="item-wrapper">
-                        <div class="item-img">
-                            <img src="assets/images/features2.jpg" alt="Producto de CampaTienda 2">
-                        </div>
-
-
-                    </div>
-                </div>
-                <div class="item features-image col-12 col-md-6 col-lg-3">
-                    <div class="item-wrapper">
-                        <div class="item-img">
-                            <img src="assets/images/features3.jpg" alt="Producto de CampaTienda 3">
-                        </div>
-
-
-                    </div>
-                </div>
-                <div class="item features-image col-12 col-md-6 col-lg-3">
-                    <div class="item-wrapper">
-                        <div class="item-img">
-                            <img src="assets/images/features4.jpg" alt="Producto de CampaTienda 4">
-                        </div>
-
-
-                    </div>
+                <div class="modal-body">
+                    <img src="data:," alt="">
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     <section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
 
@@ -213,6 +193,7 @@
     <script src="assets/ytplayer/index.js"></script>
     <script src="assets/dropdown/js/navbar-dropdown.js"></script>
     <script src="assets/theme/js/script.js"></script>
+    <script src="assets/js/campatienda.js"></script>
 
 
     <input name="animation" type="hidden">
