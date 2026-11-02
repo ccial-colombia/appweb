@@ -4,11 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-    <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
+    <link rel="icon" href="assets/images/favicon-192x192.png" data-imagen="global.favicon" type="image/png">
     <title>Testimonio | CCI AL/Colombia</title>
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/theme/css/style.css">
     <link rel="stylesheet" href="assets/css/contenido.css">
+    <script src="assets/js/secciones.js"></script>
     <style>
         body { background: #f4f5f7; }
         .contenedor-testimonio { max-width: 700px; margin: 3rem auto; padding: 0 1rem; }
@@ -34,14 +35,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
     <script>
-        const supabaseClient = supabase.createClient(
-            "https://gmcuzmsckwtdvurboobh.supabase.co",
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk",
-            { global: { fetch: (url, options) => fetch(url, Object.assign({}, options, { cache: "no-store" })) } }
-        );
-
+        // Usa el cliente de Supabase compartido de assets/js/secciones.js.
         function escaparHtml(texto) {
             const div = document.createElement("div");
             div.textContent = texto == null ? "" : String(texto);
@@ -58,12 +53,18 @@
                 return;
             }
 
-            const { data, error } = await supabaseClient
-                .from("testimonios")
-                .select("nombre, rol, mensaje, foto_url")
-                .eq("id", id)
-                .eq("visible", true)
-                .maybeSingle();
+            let data = null, error = null;
+            try {
+                const supabaseClient = await obtenerClienteSupabase();
+                ({ data, error } = await supabaseClient
+                    .from("testimonios")
+                    .select("nombre, rol, mensaje, foto_url")
+                    .eq("id", id)
+                    .eq("visible", true)
+                    .maybeSingle());
+            } catch (e) {
+                error = e;
+            }
 
             if (error || !data) {
                 contenedor.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el testimonio.</p>';

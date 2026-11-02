@@ -6,6 +6,9 @@
  * su página, su clave, su título y si está habilitado; aquí se consulta esa
  * tabla y se quitan del DOM los bloques deshabilitados.
  *
+ * También cambia las imágenes marcadas con data-imagen="clave" por las que
+ * estén guardadas en la tabla "imagenes_sitio" (admin.html > Imágenes del sitio).
+ *
  * Además ofrece el cliente de Supabase compartido por toda la página:
  *   obtenerClienteSupabase().then(function (cliente) { ... });
  * Así la librería se descarga una sola vez y la clave vive en un solo lugar.
@@ -26,8 +29,10 @@
 
     // Oculta los bloques administrables hasta saber cuáles están habilitados,
     // para que los deshabilitados no alcancen a verse al abrir la página.
+    // Lo mismo con las imágenes administrables, para que no se vea la anterior.
     var estilo = document.createElement("style");
-    estilo.textContent = "." + CLASE_CARGANDO + " [data-seccion]{visibility:hidden}";
+    estilo.textContent = "." + CLASE_CARGANDO + " [data-seccion]," +
+        "." + CLASE_CARGANDO + " img[data-imagen]{visibility:hidden}";
     document.head.appendChild(estilo);
     document.documentElement.classList.add(CLASE_CARGANDO);
 
@@ -98,6 +103,16 @@
         });
     }
 
+    // Valores distintos de un atributo entre varios elementos.
+    function clavesUnicas(elementos, atributo) {
+        var claves = [];
+        Array.prototype.forEach.call(elementos, function (el) {
+            var clave = el.getAttribute(atributo);
+            if (clave && claves.indexOf(clave) === -1) claves.push(clave);
+        });
+        return claves;
+    }
+
     // Inserta el contenido con formato (tabla contenido_secciones) en los
     // marcadores <... data-contenido="clave">. Solo se consulta si la página
     // tiene al menos un marcador, así las demás no pagan la consulta extra.
@@ -105,11 +120,7 @@
         var marcadores = document.querySelectorAll("[data-contenido]");
         if (marcadores.length === 0) return Promise.resolve();
 
-        var claves = [];
-        Array.prototype.forEach.call(marcadores, function (m) {
-            var clave = m.getAttribute("data-contenido");
-            if (claves.indexOf(clave) === -1) claves.push(clave);
-        });
+        var claves = clavesUnicas(marcadores, "data-contenido");
 
         return cliente
             .from("contenido_secciones")
@@ -128,23 +139,69 @@
             });
     }
 
+    // Pone en cada elemento <... data-imagen="clave"> la imagen guardada en la
+    // tabla imagenes_sitio:
+    //   <img>             -> cambia src y, si hay uno guardado, el texto alternativo
+    //   <link rel="icon"> -> cambia el ícono de la pestaña
+    //   otro elemento     -> cambia su imagen de fondo
+    // Si la clave no tiene imagen guardada se deja la del HTML.
+    function aplicarImagenes(cliente) {
+        var marcadores = document.querySelectorAll("[data-imagen]");
+        if (marcadores.length === 0) return Promise.resolve();
+
+        return cliente
+            .from("imagenes_sitio")
+            .select("clave, imagen_url, alt")
+            .in("clave", clavesUnicas(marcadores, "data-imagen"))
+            .then(function (respuesta) {
+                if (!respuesta || respuesta.error || !respuesta.data) return;
+                var porClave = {};
+                respuesta.data.forEach(function (fila) {
+                    porClave[fila.clave] = fila;
+                });
+                Array.prototype.forEach.call(marcadores, function (el) {
+                    var fila = porClave[el.getAttribute("data-imagen")];
+                    if (!fila) return;
+                    var url = fila.imagen_url;
+                    if (url) {
+                        if (el.tagName === "IMG") {
+                            if (el.getAttribute("src") !== url) el.setAttribute("src", url);
+                        } else if (el.tagName === "LINK") {
+                            if (el.getAttribute("href") !== url) {
+                                el.removeAttribute("type"); // la nueva puede no ser PNG
+                                el.setAttribute("href", url);
+                            }
+                        } else {
+                            el.style.backgroundImage = 'url("' + url.replace(/["\\]/g, "\\$&") + '")';
+                        }
+                    }
+                    if (fila.alt && el.tagName === "IMG") el.setAttribute("alt", fila.alt);
+                });
+            });
+    }
+
+    function ignorarError() {
+        // Ante cualquier error se deja esa parte de la página tal como está en el HTML.
+    }
+
     function aplicarSecciones() {
-        var cliente;
         obtenerClienteSupabase()
-            .then(function (c) {
-                cliente = c;
-                return cliente
+            .then(function (cliente) {
+                var secciones = cliente
                     .from("informacion_general")
                     .select("clave, visible")
-                    .eq("pagina", paginaActual());
+                    .eq("pagina", paginaActual())
+                    .then(function (respuesta) {
+                        if (respuesta && !respuesta.error && respuesta.data) aplicar(respuesta.data);
+                        return aplicarContenido(cliente);
+                    });
+                // Las imágenes se consultan al mismo tiempo que las secciones.
+                return Promise.all([
+                    secciones.catch(ignorarError),
+                    aplicarImagenes(cliente).catch(ignorarError)
+                ]);
             })
-            .then(function (respuesta) {
-                if (respuesta && !respuesta.error && respuesta.data) aplicar(respuesta.data);
-                return aplicarContenido(cliente);
-            })
-            .catch(function () {
-                // Ante cualquier error se deja la página tal como está en el HTML.
-            })
+            .catch(ignorarError)
             .then(revelar);
     }
 

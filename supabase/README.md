@@ -10,6 +10,7 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 - `secciones_visibilidad.sql`: agrega a `informacion_general` las columnas `pagina`, `orden` y `visible`, y carga el catalogo de secciones visuales de cada pagina.
 - `contenido_secciones.sql`: crea la tabla `contenido_secciones`, que asocia cada seccion (`informacion_general.clave`) con un texto con formato editable desde el panel.
 - `cursos_talleres.sql` / `cursos_talleres_datos.sql`: nueva estructura de `cursos` y `talleres` (imagen, nombre, descripcion corta, descripcion, orden, visible) y carga de los datos actuales.
+- `imagenes_sitio.sql`: crea la tabla `imagenes_sitio` con las 61 imagenes fijas del sitio (logo, favicon, portadas, galeria, tomos, normas, valores y fondos) para cambiarlas desde el panel, pestaña "Imagenes del sitio". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `campatienda_productos.sql`: crea la tabla `productos` (foto, nombre, descripcion, precio, tallas u opciones, disponible, orden, visible) que muestra `campatienda.html` y se administra en el panel, pestaña "CampaTienda". Carga los 7 productos iniciales con sus fotos de `assets/images/campatienda/`. Se puede ejecutar mas de una vez.
 
 ## Secciones visuales
@@ -36,6 +37,24 @@ Para mostrar ese texto en una pagina, agrega un marcador donde quieras que apare
 
 `secciones.js` detecta esos marcadores, consulta `contenido_secciones` y reemplaza su
 contenido con el HTML guardado. Si una pagina no tiene marcadores, no se hace la consulta.
+
+## Imagenes del sitio
+
+Cada imagen fija del HTML lleva `data-imagen="clave"`:
+
+```html
+<img data-imagen="inicio.vision_mision" src="assets/images/vision20y20mision-1101x734.jpeg" alt="">
+<section data-seccion="valores.encabezado" data-imagen="valores.fondo">  <!-- imagen de fondo -->
+<link rel="icon" href="assets/images/favicon-192x192.png" data-imagen="global.favicon">
+```
+
+`secciones.js` consulta `imagenes_sitio` con las claves de la pagina y cambia la imagen
+(`src` en `<img>`, `href` en el favicon, imagen de fondo en cualquier otro elemento) antes
+de mostrarla. Si la clave no tiene imagen guardada, o la consulta falla, queda la del HTML.
+Las claves `global.*` (logo y favicon) se usan en todas las paginas.
+
+Las imagenes de cursos, talleres, testimonios y productos se administran en sus propias
+pestañas del panel.
 
 ## Orden de ejecucion
 

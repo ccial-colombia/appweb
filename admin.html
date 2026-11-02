@@ -13,6 +13,9 @@
         .celda-texto { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #vista-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .nav-pills .nav-link { cursor: pointer; }
+        /* Fondo gris para que se vean también las imágenes blancas o transparentes (logos). */
+        .miniatura-rect { width: 72px; height: 48px; object-fit: contain; border-radius: 4px; background: #9aa0a6; }
+        .vista-previa-rect { max-height: 160px; max-width: 100%; border-radius: 8px; display: block; background: #9aa0a6; padding: 4px; }
         /* Editor de texto amplio, estilo procesador de texto */
         .ql-container { font-size: 1rem; }
         .ql-editor { min-height: 340px; max-height: 60vh; overflow-y: auto; background: #fff; }
@@ -53,9 +56,13 @@
                     <ul class="nav nav-pills flex-lg-column flex-row flex-wrap" id="menu-tablas"></ul>
                 </div>
                 <div class="col-12 col-lg-10">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                         <h4 id="titulo-tabla" class="mb-0"></h4>
-                        <button class="btn btn-success" onclick="abrirFormulario(null)">+ Agregar</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="filtro-pagina" class="form-select" style="display:none; width:auto;"
+                                aria-label="Filtrar por página" onchange="pintarFilas()"></select>
+                            <button class="btn btn-success text-nowrap" id="btn-agregar" onclick="abrirFormulario(null)">+ Agregar</button>
+                        </div>
                     </div>
                     <div id="alerta" class="alert alert-danger" style="display:none;"></div>
                     <div class="table-responsive bg-white rounded shadow-sm">
@@ -168,7 +175,7 @@
             // Productos de campatienda.html. Las fotos van al bucket "contenido", carpeta productos/.
             productos: {
                 titulo: "CampaTienda", pk: "id", campos: [
-                    { campo: "imagen_url", etiqueta: "Foto", tipo: "image", bucket: "contenido" },
+                    { campo: "imagen_url", etiqueta: "Foto", tipo: "image", bucket: "contenido", forma: "rectangular" },
                     { campo: "nombre", etiqueta: "Producto", tipo: "text", requerido: true },
                     { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
                     { campo: "precio", etiqueta: "Precio (COP)", tipo: "number",
@@ -179,6 +186,20 @@
                       ayuda: "Si lo desactivas, el producto se muestra como \"Agotado\"." },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
                     { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+                ]
+            },
+            // Imágenes fijas de las páginas (data-imagen en el HTML; ver supabase/imagenes_sitio.sql).
+            // Solo se cambian: las filas las crea el script SQL.
+            imagenes_sitio: {
+                titulo: "Imágenes del sitio", pk: "id", soloEditar: true,
+                ordenarPor: ["pagina", "orden"], nulosPrimero: true, campos: [
+                    { campo: "imagen_url", etiqueta: "Imagen", tipo: "image", bucket: "contenido", forma: "rectangular",
+                      textoVacio: "Original",
+                      ayuda: "Si quitas la imagen, la página vuelve a mostrar la imagen original." },
+                    { campo: "pagina", etiqueta: "Página", tipo: "text", soloLectura: true, textoVacio: "Global (todas las páginas)" },
+                    { campo: "titulo", etiqueta: "Ubicación", tipo: "text", soloLectura: true },
+                    { campo: "alt", etiqueta: "Texto alternativo", tipo: "text",
+                      ayuda: "Describe la imagen para quienes usan lectores de pantalla. Si lo dejas vacío se usa el texto original." }
                 ]
             },
             informacion_general: {
@@ -298,34 +319,89 @@
                 enlace.classList.toggle("active", enlace.dataset.tabla === nombre);
             });
             document.getElementById("titulo-tabla").textContent = TABLAS[nombre].titulo;
+            // Tablas "solo editar": sus filas las crea un script SQL y no se agregan ni eliminan aquí.
+            document.getElementById("btn-agregar").style.display = TABLAS[nombre].soloEditar ? "none" : "";
             cargarDatos();
+        }
+
+        function vacio(valor) {
+            return valor == null || valor === "";
         }
 
         async function cargarDatos() {
             const def = TABLAS[tablaActual];
+            const tablaPedida = tablaActual;
             mostrarAlerta("");
 
+            // Orden: el que defina la tabla o, si no, página y orden cuando existan.
+            const columnas = def.ordenarPor || def.campos
+                .map(function (c) { return c.campo; })
+                .filter(function (campo) { return campo === "pagina" || campo === "orden"; });
             let consulta = supabaseClient.from(tablaActual).select("*");
-            const tienePagina = def.campos.some(function (c) { return c.campo === "pagina"; });
-            const tieneOrden = def.campos.some(function (c) { return c.campo === "orden"; });
-            if (tienePagina) consulta = consulta.order("pagina", { ascending: true });
-            if (tieneOrden) consulta = consulta.order("orden", { ascending: true });
+            columnas.forEach(function (columna) {
+                consulta = consulta.order(columna, { ascending: true, nullsFirst: !!def.nulosPrimero });
+            });
             consulta = consulta.order(def.pk, { ascending: true });
 
             const { data, error } = await consulta;
+            // Si se cambió de pestaña mientras cargaba, esta respuesta ya no sirve.
+            if (tablaPedida !== tablaActual) return;
             if (error) {
                 mostrarAlerta("Error al cargar los datos: " + error.message);
+                cargarDatos.filas = [];
+            } else {
+                cargarDatos.filas = data || [];
+            }
+            prepararFiltroPagina();
+            pintarFilas();
+        }
+
+        // Valor de la columna "pagina" para el filtro ("-" = sin página).
+        function valorFiltro(fila) {
+            return vacio(fila.pagina) ? "-" : fila.pagina;
+        }
+
+        // Muestra el filtro por página en las tablas que tienen esa columna.
+        function prepararFiltroPagina() {
+            const def = TABLAS[tablaActual];
+            const filtro = document.getElementById("filtro-pagina");
+            const campoPagina = def.campos.find(function (c) { return c.campo === "pagina"; });
+            if (!campoPagina) {
+                filtro.style.display = "none";
                 return;
             }
+            const anterior = filtro.dataset.tabla === tablaActual ? filtro.value : "*";
+            const valores = [];
+            cargarDatos.filas.forEach(function (fila) {
+                const v = valorFiltro(fila);
+                if (valores.indexOf(v) === -1) valores.push(v);
+            });
+            filtro.innerHTML = '<option value="*">Todas las páginas</option>' + valores.map(function (v) {
+                const texto = v === "-" ? (campoPagina.textoVacio || "Sin página") : v;
+                return '<option value="' + escaparHtml(v) + '">' + escaparHtml(texto) + "</option>";
+            }).join("");
+            filtro.value = valores.indexOf(anterior) !== -1 ? anterior : "*";
+            filtro.dataset.tabla = tablaActual;
+            filtro.style.display = "";
+        }
+
+        function pintarFilas() {
+            const def = TABLAS[tablaActual];
+            const filtro = document.getElementById("filtro-pagina");
+            const filtroActivo = filtro.style.display === "none" ? "*" : filtro.value;
+            const data = (cargarDatos.filas || []).filter(function (fila) {
+                return filtroActivo === "*" || valorFiltro(fila) === filtroActivo;
+            });
 
             document.getElementById("thead-datos").innerHTML = "<tr>" +
                 def.campos.map(function (c) { return "<th>" + escaparHtml(c.etiqueta) + "</th>"; }).join("") +
                 '<th class="text-end">Acciones</th></tr>';
 
             const tbody = document.getElementById("tbody-datos");
-            if (!data || data.length === 0) {
+            if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="' + (def.campos.length + 1) +
-                    '" class="text-center text-muted py-4">No hay registros. Usa "+ Agregar".</td></tr>';
+                    '" class="text-center text-muted py-4">No hay registros.' +
+                    (def.soloEditar ? "" : ' Usa "+ Agregar".') + "</td></tr>";
                 return;
             }
 
@@ -337,9 +413,13 @@
                             (valor ? "Sí" : "No") + "</span></td>";
                     }
                     if (c.tipo === "image") {
-                        return valor
-                            ? '<td><img src="' + escaparHtml(valor) + '" alt="Foto" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></td>'
-                            : '<td class="text-muted">Sin foto</td>';
+                        if (vacio(valor)) return '<td class="text-muted">' + escaparHtml(c.textoVacio || "Sin foto") + "</td>";
+                        return c.forma === "rectangular"
+                            ? '<td><img src="' + escaparHtml(valor) + '" alt="Imagen" class="miniatura-rect" loading="lazy"></td>'
+                            : '<td><img src="' + escaparHtml(valor) + '" alt="Foto" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></td>';
+                    }
+                    if (vacio(valor) && c.textoVacio) {
+                        return '<td class="text-muted">' + escaparHtml(c.textoVacio) + "</td>";
                     }
                     if (c.tipo === "richtext") {
                         const textoPlano = obtenerTextoPlano(valor);
@@ -354,11 +434,10 @@
                 return "<tr>" + celdas +
                     '<td class="text-end text-nowrap">' +
                     '<button class="btn btn-outline-primary btn-sm me-1" onclick="abrirFormulario(' + fila[def.pk] + ')">Editar</button>' +
-                    '<button class="btn btn-outline-danger btn-sm" onclick="eliminar(' + fila[def.pk] + ')">Eliminar</button>' +
+                    (def.soloEditar ? "" :
+                        '<button class="btn btn-outline-danger btn-sm" onclick="eliminar(' + fila[def.pk] + ')">Eliminar</button>') +
                     "</td></tr>";
             }).join("");
-
-            cargarDatos.filas = data;
         }
 
         // ==================== AGREGAR / EDITAR / ELIMINAR ====================
@@ -403,6 +482,13 @@
                 }
                 const etiqueta = '<label class="form-label" for="campo-' + c.campo + '">' + escaparHtml(c.etiqueta) +
                     (c.requerido ? ' <span class="text-danger">*</span>' : "") + "</label>";
+                // Campo informativo: se muestra pero no se edita ni se guarda.
+                if (c.soloLectura) {
+                    const texto = vacio(valor) ? (c.textoVacio || "") : valor;
+                    return '<div class="mb-3">' + etiqueta +
+                        '<input class="form-control" type="text" id="campo-' + c.campo + '" value="' + escaparHtml(texto) + '" disabled>' +
+                        ayuda + "</div>";
+                }
                 if (c.tipo === "textarea") {
                     return '<div class="mb-3">' + etiqueta +
                         '<textarea class="form-control" rows="4" id="campo-' + c.campo + '">' + escaparHtml(valor) + "</textarea>" + ayuda + "</div>";
@@ -410,7 +496,10 @@
                 if (c.tipo === "image") {
                     return '<div class="mb-3">' + etiqueta +
                         (valor
-                            ? '<div class="mb-2"><img src="' + escaparHtml(valor) + '" alt="Foto actual" style="max-height:120px;border-radius:8px;display:block;"></div>'
+                            ? '<div class="mb-2"><img src="' + escaparHtml(valor) + '" alt="Foto actual" ' +
+                              (c.forma === "rectangular"
+                                  ? 'class="vista-previa-rect"'
+                                  : 'style="max-height:120px;border-radius:8px;display:block;"') + "></div>"
                             : "") +
                         '<input class="form-control" type="file" accept="image/*" id="campo-' + c.campo + '">' +
                         (valor
@@ -545,6 +634,8 @@
             const errorModal = document.getElementById("modal-error");
 
             for (const c of def.campos) {
+                if (c.soloLectura) continue; // no se envía: no cambia
+
                 if (c.tipo === "image") {
                     const inputArchivo = document.getElementById("campo-" + c.campo);
                     const checkboxQuitar = document.getElementById("campo-" + c.campo + "-quitar");
