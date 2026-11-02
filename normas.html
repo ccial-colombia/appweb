@@ -1,10 +1,10 @@
 ﻿<!DOCTYPE html>
-<html  >
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <link rel="shortcut icon" href="assets/images/logo-ccial-v4-isotipo-96x72.png" type="image/x-icon">
+  <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
   <meta name="description" content="CCI América Latina es una asociación de miembros que aman el ministerio de campamentos y lo utilizan como herramienta para evangelizar, discipular y desarrollar lideres. CCI América Latina es la encargada de atender la región que abarca desde México hasta Argentina.">
   
   
@@ -24,6 +24,12 @@
     <script src="assets/js/secciones.js"></script>
 </head>
 <body>
+
+  <script>
+    if (sessionStorage.getItem("auth") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
   
   <section data-bs-version="5.1" class="menu menu3 cid-u5Dmq6dS5G" once="menu" id="menu3-1">
     
@@ -31,37 +37,11 @@
         <div class="container">
             <div class="navbar-brand">
                 <span class="navbar-logo">
-                    <a href="index.html">
+                    <a href="inicio.html">
                         <img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL Colombia" style="height: 3rem;">
                     </a>
                 </span>
-                <!-- <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-5" href="index.html">CCI AL El Salvador</a></span> -->
             </div>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbarSupportedContent" data-bs-target="#navbarSupportedContent" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                <div class="hamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </button>
-            <!-- <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav nav-dropdown nav-right" data-app-modern-menu="true"><li class="nav-item"><a class="nav-link link text-primary display-7" href="index.html">Inicio&nbsp;</a></li>
-                    <li class="nav-item dropdown"><a class="nav-link link text-primary dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Nosotros</a><div class="dropdown-menu" aria-labelledby="dropdown-479"><a class="text-primary dropdown-item display-7" href="historia.html">Historia</a><a class="text-primary dropdown-item display-7" href="valores.html">Valores de CCI AL</a><a class="text-primary show dropdown-item display-7" href="normas.html">Normas de CCI AL</a><a class="text-primary show dropdown-item display-7" href="enciclopedia.html">Enciclopedia de Juegos</a><a class="text-primary show dropdown-item display-7" href="curriculum.html">Curriculum de CCI AL</a></div></li><li class="nav-item dropdown"><a class="nav-link link text-primary dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">CCI AL</a><div class="dropdown-menu" aria-labelledby="dropdown-341"><a class="text-primary show dropdown-item display-7" href="https://www.ccial.org/" target="_blank">CCI AL Oficial</a><div class="dropdown"><a class="text-primary dropdown-item dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Nuevo Senderos</a><div class="dropdown-menu dropdown-submenu" aria-labelledby="dropdown-225"><a class="text-primary show dropdown-item display-7" href="https://ccial.org/que-belleza/" target="_blank">¡Qué belleza!</a><a class="text-primary show dropdown-item display-7" href="https://ccial.org/mochila-lista/" target="_blank">Mochila Lista<br></a></div></div><a class="text-primary show dropdown-item display-7" href="testimonio.html">Testimonios</a></div></li><li class="nav-item dropdown open"><a class="nav-link link text-primary dropdown-toggle show display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">Miembros</a><div class="dropdown-menu show" aria-labelledby="dropdown-609" data-bs-popper="none"><a class="text-primary show dropdown-item display-7" href="recursos.html">Recursos</a><a class="text-primary show dropdown-item display-7" href="membresia.html">Membresia</a></div></li>
-                    <li class="nav-item"><a class="nav-link link text-primary display-7" href="contactanos.html">Contactanos</a>
-                    </li></ul>
-                <div class="icons-menu">
-                    <a class="iconfont-wrapper" href="https://www.facebook.com/CCIALELSALVADOR?locale=es_LA" target="_blank">
-                        <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>
-                    </a>
-                    <a class="iconfont-wrapper" href="https://www.instagram.com/ccial_elsalvador" target="_blank">
-                        <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
-                    </a>
-                    
-                    
-                </div>
-                
-            </div> -->
         </div>
     </nav>
 </section>
@@ -100,7 +80,7 @@
                         <div class="card-box">
                             <div class="row">
                                 <div class="col-md">
-                                    <h6 class="card-title mbr-fonts-style display-2"><strong>Fomertar un ambiente de amor y camadería</strong></h6>
+                                    <h6 class="card-title mbr-fonts-style display-2"><strong>Fomentar un ambiente de amor y camaradería</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7"></p>
                                 </div>
                                 
@@ -179,7 +159,7 @@
                         <div class="card-box">
                             <div class="row">
                                 <div class="col-md">
-                                    <h6 class="card-title mbr-fonts-style display-2"><strong>Reflejar la ética cristiana en el campameto</strong></h6>
+                                    <h6 class="card-title mbr-fonts-style display-2"><strong>Reflejar la ética cristiana en el campamento</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7"></p>
                                 </div>
                                 
@@ -353,22 +333,45 @@
     </div>
 </section>
 
-<section data-bs-version="5.1" class="footer7 cid-uBHPk2pUQZ" once="footers" id="footer7-1q">
+<section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
 
-    
 
-    
+
+
 
     <div class="container">
-        <div class="media-container-row align-center mbr-white">
-            <div class="col-12">
-                <p class="mbr-text mb-0 mbr-fonts-style display-7">
-                    © Copyright 2025 - All Rights Reserved
-                </p>
-            </div>
+      <div class="row">
+        <div class="col-12 col-lg-6 center mt-2 mb-3">
+          <p class="mbr-fonts-style copyright mb-0 display-7">
+            © Copyright 2026 - Todos los derechos reservados</p>
         </div>
+        <div class="col-12 col-lg-6 center">
+          <div class="row-links mt-2 mb-3">
+            <ul class="row-links-soc">
+
+
+
+
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="https://www.facebook.com/487429831785922" class="text-white text-primary"
+                  target="_blank" aria-label="Facebook" title="Facebook"><span class="socicon-facebook" style="font-size:1.5rem;line-height:1;"></span></a></li>
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="https://www.instagram.com/ccial.colombia/" class="text-white text-primary"
+                  target="_blank" aria-label="Instagram" title="Instagram"><span class="socicon-instagram" style="font-size:1.5rem;line-height:1;"></span></a></li>
+              <li class="row-links-soc-item mbr-fonts-style display-7">
+                <a href="https://www.youtube.com/@CCIALCOLOMBIA" class="text-white text-primary"
+                  target="_blank" aria-label="YouTube" title="YouTube"><span class="socicon-youtube" style="font-size:1.5rem;line-height:1;"></span></a>
+              </li>
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="mailto:comunicacionesccialcol@gmail.com?subject=Consulta%20desde%20Pagina%20Web"
+                  class="text-white text-primary" aria-label="Correo electrónico" title="Correo electrónico"><span class="socicon-mail" style="font-size:1.5rem;line-height:1;"></span></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-</section><script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>  <script src="assets/smoothscroll/smooth-scroll.js"></script>  <script src="assets/ytplayer/index.js"></script>  <script src="assets/dropdown/js/navbar-dropdown.js"></script>  <script src="assets/theme/js/script.js"></script>  
+  </section>
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>  <script src="assets/smoothscroll/smooth-scroll.js"></script>  <script src="assets/ytplayer/index.js"></script>  <script src="assets/dropdown/js/navbar-dropdown.js"></script>  <script src="assets/theme/js/script.js"></script>  
   
   
   <input name="animation" type="hidden">

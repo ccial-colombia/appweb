@@ -1,0 +1,36 @@
+/*
+ * Estilos del texto con formato que se edita desde el panel (editor Quill):
+ * marcadores data-contenido (ver assets/js/secciones.js), descripciones de
+ * cursos y talleres, y testimonios.
+ */
+
+/* Quill guarda cada línea como un <p> y las líneas en blanco como <p><br></p>.
+   Sin margen entre párrafos, el texto se ve igual que en el editor.
+   :where() deja la especificidad en cero para no pisar las clases propias
+   de cada sección (mbr-text, display-7, etc.). */
+:where([data-contenido]) p {
+  margin-bottom: 0;
+  line-height: inherit;
+}
+
+:where([data-contenido]) :is(h1, h2, h3, h4) {
+  font-family: inherit;
+}
+
+/* Clases que genera el editor */
+.ql-align-center { text-align: center; }
+.ql-align-right { text-align: right; }
+.ql-align-justify { text-align: justify; }
+
+.ql-size-small { font-size: 0.75em; }
+.ql-size-large { font-size: 1.5em; }
+.ql-size-huge { font-size: 2.5em; }
+
+.ql-indent-1 { padding-left: 3em; }
+.ql-indent-2 { padding-left: 6em; }
+.ql-indent-3 { padding-left: 9em; }
+.ql-indent-4 { padding-left: 12em; }
+.ql-indent-5 { padding-left: 15em; }
+.ql-indent-6 { padding-left: 18em; }
+.ql-indent-7 { padding-left: 21em; }
+.ql-indent-8 { padding-left: 24em; }

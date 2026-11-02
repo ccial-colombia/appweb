@@ -78,7 +78,7 @@ ccialcol/
 | **Status** | ⚠️ Navbar menu items are **commented out** |
 
 **Issues:**
-- 🔴 **Password is hardcoded in plain-text JavaScript:** `colombia2026`
+- 🔴 **Password is hardcoded in plain-text JavaScript** (value redacted)
 - ⚠️ Navigation links are commented out — visitors only see the logo
 - The `<html>` tag has trailing whitespace: `<html  >`
 
@@ -181,7 +181,7 @@ ccialcol/
 
 | # | Severity | Issue |
 |---|----------|-------|
-| 1 | 🔴 **CRITICAL** | Password is **hardcoded in plain-text JavaScript** in `index.html` line 138: `const PASSWORD_CORRECTA = "colombia2026"` — anyone viewing the page source can see it |
+| 1 | 🔴 **CRITICAL** | Password is **hardcoded in plain-text JavaScript** in `index.html` line 138: `const PASSWORD_CORRECTA = "…"` (valor omitido) — anyone viewing the page source can see it |
 | 2 | 🔴 **CRITICAL** | Auth is client-side only (`sessionStorage`) — offers **zero real security**. Any page can be accessed by navigating directly to its URL |
 | 3 | ✅ **FIXED** | 5 unnecessary pages were deleted. `campatienda.html` is now protected. |
 | 4 | ⚠️ **MEDIUM** | Form in `contactanos.html` sends data to `https://mobirise.eu/` — data goes to Mobirise servers, not CCI AL |

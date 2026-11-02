@@ -6,6 +6,10 @@
  * su página, su clave, su título y si está habilitado; aquí se consulta esa
  * tabla y se quitan del DOM los bloques deshabilitados.
  *
+ * Además ofrece el cliente de Supabase compartido por toda la página:
+ *   obtenerClienteSupabase().then(function (cliente) { ... });
+ * Así la librería se descarga una sola vez y la clave vive en un solo lugar.
+ *
  * Se incluye en el <head> de cada página:
  *   <script src="assets/js/secciones.js"></script>
  *
@@ -16,7 +20,7 @@
 
     var SUPABASE_URL = "https://gmcuzmsckwtdvurboobh.supabase.co";
     var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk";
-    var CDN_SUPABASE = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    var CDN_SUPABASE = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0";
     var CLASE_CARGANDO = "secciones-cargando";
     var ESPERA_MAXIMA = 3000;
 
@@ -35,9 +39,13 @@
     setTimeout(function () { if (!revelado) revelar(); }, ESPERA_MAXIMA);
 
     // Nombre del archivo actual, tal como se guarda en la columna "pagina".
+    // Si el servidor sirve la página sin extensión (/inicio) se agrega ".html".
     function paginaActual() {
-        var archivo = window.location.pathname.split("/").pop();
-        return archivo ? archivo.toLowerCase() : "index.html";
+        var archivo = window.location.pathname.split("/").pop() || "";
+        try { archivo = decodeURIComponent(archivo); } catch (e) { /* se deja tal cual */ }
+        archivo = archivo.toLowerCase();
+        if (!archivo) return "index.html";
+        return archivo.indexOf(".") === -1 ? archivo + ".html" : archivo;
     }
 
     function cargarLibreria() {
@@ -50,6 +58,30 @@
             document.head.appendChild(etiqueta);
         });
     }
+
+    // Cliente único de Supabase para toda la página (sin caché del navegador,
+    // para que los cambios hechos en el panel se vean al recargar).
+    var promesaCliente = null;
+    function obtenerClienteSupabase() {
+        if (!promesaCliente) {
+            promesaCliente = cargarLibreria().then(function () {
+                return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    global: {
+                        fetch: function (url, opciones) {
+                            return fetch(url, Object.assign({}, opciones, { cache: "no-store" }));
+                        }
+                    }
+                });
+            });
+            // Si la librería no carga, la próxima llamada lo vuelve a intentar.
+            promesaCliente.catch(function () { promesaCliente = null; });
+        }
+        return promesaCliente;
+    }
+    window.obtenerClienteSupabase = obtenerClienteSupabase;
+
+    // Empieza a descargar la librería de inmediato, sin esperar al resto del HTML.
+    obtenerClienteSupabase();
 
     // Quita los bloques cuya clave está marcada como no visible. Las claves que
     // no existan en la base de datos se dejan visibles.
@@ -98,15 +130,9 @@
 
     function aplicarSecciones() {
         var cliente;
-        cargarLibreria()
-            .then(function () {
-                cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    global: {
-                        fetch: function (url, opciones) {
-                            return fetch(url, Object.assign({}, opciones, { cache: "no-store" }));
-                        }
-                    }
-                });
+        obtenerClienteSupabase()
+            .then(function (c) {
+                cliente = c;
                 return cliente
                     .from("informacion_general")
                     .select("clave, visible")

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
   <!-- Site made with Mobirise Website Builder v6.1.9, https://mobirise.com -->
@@ -7,7 +7,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="generator" content="Mobirise v6.1.9, mobirise.com">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
+  <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
   <meta name="description"
     content="CCI América Latina es una asociación de miembros que aman el ministerio de campamentos y lo utilizan como herramienta para evangelizar, discipular y desarrollar lideres. CCI América Latina es la encargada de atender la región que abarca desde México hasta Argentina.">
 
@@ -55,17 +55,8 @@
           </span>
 
         </div>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-bs-toggle="collapse"
-          data-target="#navbarSupportedContent" data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-          <div class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </button>
-        <!--            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <!-- Sin menú antes de iniciar sesión (por eso tampoco hay botón hamburguesa).
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav-dropdown nav-right" data-app-modern-menu="true"><li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="inicio.html">Inicio&nbsp;</a></li><li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="https://ccial.org/" target="_blank">CCI AL</a></li>
                     <li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="equipados.html" aria-expanded="false">Equipados</a></li><li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="exclusivo.html" aria-expanded="false">Exclusivo<br></a></li><li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="comunidad.html" aria-expanded="false">Comunidad</a></li>
                     <li class="nav-item"><a class="nav-link link text-white text-primary display-7" href="campatienda.html">CampaTienda</a>
@@ -82,7 +73,7 @@
     <div class="text-center container">
       <div class="row mb-4 justify-content-center">
         <div class="col-12 col-md-12">
-          <img class="w-100" src="assets/images/inicio-2266x1511.jpeg" alt="Mobirise Website Builder">
+          <img class="w-100" src="assets/images/inicio-1600x753.jpeg" alt="Bienvenido a CCI AL/Colombia">
         </div>
       </div>
       <div class="row justify-content-center">
@@ -96,7 +87,7 @@
           </p>
           <div class="mbr-section-btn mt-4">
             <!-- <a class="btn btn-primary display-7" href="inicio.html">Entrar</a> -->
-            <a class="btn btn-primary display-7" href="#" onclick="mostrarLogin()">Entrar</a>
+            <a class="btn btn-primary display-7" href="#" onclick="mostrarLogin(event)">Entrar</a>
           </div>
         </div>
       </div>
@@ -535,7 +526,7 @@
         </div>
 
         <div class="weather-city-selector">
-          <select id="city-selector">
+          <select id="city-selector" aria-label="Ciudad">
             <option value="auto">📍 Mi ubicación actual</option>
             <option value="7.8836,-76.6259">Apartadó</option>
             <option value="7.0847,-70.7591">Arauca</option>
@@ -729,13 +720,14 @@
       async function fetchRate() {
         try {
           const res = await fetch('https://open.er-api.com/v6/latest/USD');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
-          if (data && data.rates) {
-            rates = Object.assign({ USD: 1 }, data.rates);
-            const now = new Date();
-            rateUpdate.textContent = 'Actualizado: ' + now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
-            updateSelectedCurrencies();
-          }
+          // Si la API responde con error ({ result: "error" }) no trae "rates".
+          if (!data || !data.rates) throw new Error('Respuesta sin tasas');
+          rates = Object.assign({ USD: 1 }, data.rates);
+          const now = new Date();
+          rateUpdate.textContent = 'Actualizado: ' + now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+          updateSelectedCurrencies();
         } catch(e) {
           rateDisplay.textContent = 'Error al cargar tasa';
           rateUpdate.textContent = '';
@@ -825,12 +817,18 @@
         contentEl.classList.add('active');
       }
 
+      // Cada consulta lleva un número; si el usuario cambia de ciudad antes de
+      // que llegue la respuesta anterior, esa respuesta se descarta.
+      let consultaActual = 0;
+
       async function fetchWeather(lat, lon) {
+        const consulta = ++consultaActual;
         showLoading();
         try {
           const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`;
           const res = await fetch(url);
-          const data = await res.json();
+          const data = res.ok ? await res.json() : null;
+          if (consulta !== consultaActual) return;
 
           if (data && data.current) {
             const c = data.current;
@@ -849,7 +847,7 @@
             showError('No se pudo obtener el clima');
           }
         } catch(e) {
-          showError('Error de conexión');
+          if (consulta === consultaActual) showError('Error de conexión');
         }
       }
 
@@ -857,11 +855,17 @@
         const val = citySelector.value;
         if (val === 'auto') {
           if (navigator.geolocation) {
+            // Mientras se espera la ubicación se muestra "Obteniendo clima...".
+            const consulta = ++consultaActual;
+            showLoading();
             navigator.geolocation.getCurrentPosition(
               function(pos) {
+                // Si mientras tanto el usuario eligió otra ciudad, se ignora.
+                if (consulta !== consultaActual) return;
                 fetchWeather(pos.coords.latitude, pos.coords.longitude);
               },
               function() {
+                if (consulta !== consultaActual) return;
                 // Fallback: Bogotá
                 fetchWeather(4.6097, -74.0817);
                 citySelector.value = '4.6097,-74.0817';
@@ -890,7 +894,7 @@
       <div class="row">
         <div class="col-12 col-lg-6 center mt-2 mb-3">
           <p class="mbr-fonts-style copyright mb-0 display-7">
-            © Copyright 2025 - Todos los derechos reservados</p>
+            © Copyright 2026 - Todos los derechos reservados</p>
         </div>
         <div class="col-12 col-lg-6 center">
           <div class="row-links mt-2 mb-3">
@@ -926,7 +930,7 @@
 
   <input name="animation" type="hidden">
 
-  <div id="loginModal" style="
+  <div id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitulo" style="
 	  display:none;
 	  position:fixed;
 	  top:0; left:0;
@@ -936,38 +940,63 @@
 	  align-items:center;
 	  justify-content:center;
 	">
-    <div style="background:white;padding:30px;border-radius:10px;max-width:400px;width:100%;text-align:center;">
-      <h3>Acceso exclusivo para miembros de CCI AL/Colombia</h3>
-      <p>Si deseas tener acceso contactate con: miembrosccialcol@gmail.com</p>
-      <input type="password" id="password" placeholder="Contraseña" class="form-control mb-3">
-      <button class="btn btn-primary" onclick="validar()">Ingresar</button>
+    <div style="position:relative;background:white;padding:30px;border-radius:10px;max-width:400px;width:100%;text-align:center;">
+      <button type="button" class="btn-close" aria-label="Cerrar" onclick="cerrarLogin()"
+        style="position:absolute;top:12px;right:12px;"></button>
+      <h3 id="loginTitulo">Acceso exclusivo para miembros de CCI AL/Colombia</h3>
+      <p>Si deseas tener acceso contáctate con:
+        <a href="mailto:miembrosccialcol@gmail.com?subject=Acceso%20para%20miembros">miembrosccialcol@gmail.com</a></p>
+      <input type="password" id="password" placeholder="Contraseña" class="form-control mb-3" autocomplete="current-password">
+      <button type="button" class="btn btn-primary" id="btn-ingresar" onclick="validar()">Ingresar</button>
       <p id="error" style="color:red;margin-top:10px;display:none;">Contraseña incorrecta</p>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const supabaseClient = supabase.createClient(
-      "https://gmcuzmsckwtdvurboobh.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk"
-    );
+    const loginModal = document.getElementById("loginModal");
 
-    function mostrarLogin() {
-      document.getElementById("loginModal").style.display = "flex";
+    function mostrarLogin(e) {
+      if (e) e.preventDefault();
+      loginModal.style.display = "flex";
       document.getElementById("password").focus();
     }
 
+    function cerrarLogin() {
+      loginModal.style.display = "none";
+      document.getElementById("password").value = "";
+      document.getElementById("error").style.display = "none";
+    }
+
+    // Se cierra con la tecla Esc o con un clic fuera del recuadro.
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && loginModal.style.display === "flex") cerrarLogin();
+    });
+    loginModal.addEventListener("click", function (e) {
+      if (e.target === loginModal) cerrarLogin();
+    });
+
     // Valida contra la base de datos: la función validar_password compara con la
     // contraseña vigente (fecha más reciente no futura) sin exponerla al navegador.
+    // Usa el cliente compartido de assets/js/secciones.js.
     async function validar() {
       const pass = document.getElementById("password").value;
       const error = document.getElementById("error");
+      const boton = document.getElementById("btn-ingresar");
+      if (boton.disabled) return;
 
-      const { data, error: err } = await supabaseClient.rpc("validar_password", { pass: pass });
+      boton.disabled = true;
+      let resultado;
+      try {
+        const cliente = await obtenerClienteSupabase();
+        resultado = await cliente.rpc("validar_password", { pass: pass });
+      } catch (e) {
+        resultado = { error: e };
+      }
+      boton.disabled = false;
 
-      if (err) {
+      if (resultado.error) {
         error.textContent = "No se pudo verificar la contraseña. Intenta de nuevo.";
-      } else if (data === true) {
+      } else if (resultado.data === true) {
         sessionStorage.setItem("auth", "true");
         window.location.href = "inicio.html";
         return;

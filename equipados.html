@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <!-- Site made with Mobirise Website Builder v6.1.9, https://mobirise.com -->
@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="generator" content="Mobirise v6.1.9, mobirise.com">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-    <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
+    <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
     <meta name="description" content="">
 
 
@@ -55,7 +55,7 @@
                 <div class="navbar-brand">
                     <span class="navbar-logo">
 
-                        <a href="index.html"><img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL/Colombia" style="height: 3rem;"></a>
+                        <a href="inicio.html"><img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL/Colombia" style="height: 3rem;"></a>
 
                     </span>
 
@@ -196,7 +196,7 @@
             <div class="row">
                 <div class="col-12 col-lg-6 center mt-2 mb-3">
                     <p class="mbr-fonts-style copyright mb-0 display-7">
-                        © Copyright 2025 - Todos los derechos reservados</p>
+                        © Copyright 2026 - Todos los derechos reservados</p>
                 </div>
                 <div class="col-12 col-lg-6 center">
                     <div class="row-links mt-2 mb-3">
@@ -231,14 +231,10 @@
     <script src="assets/playervimeo/vimeo_player.js"></script>
     <script src="assets/theme/js/script.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Carga los videos exclusivos administrados desde Supabase (tabla "videos").
-        const supabaseClient = supabase.createClient(
-            "https://gmcuzmsckwtdvurboobh.supabase.co",
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtY3V6bXNja3d0ZHZ1cmJvb2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTIyNDksImV4cCI6MjA5MjM2ODI0OX0.W0_WJnePVI9gXclM3NTQKvo7VLNAf5gQ2PPPc_X9QMk",
-            { global: { fetch: (url, options) => fetch(url, Object.assign({}, options, { cache: "no-store" })) } }
-        );
+        // Carga los videos exclusivos administrados desde Supabase (tabla "videos"),
+        // con el cliente compartido de assets/js/secciones.js.
+        let supabaseClient = null;
 
         function escaparHtml(texto) {
             const div = document.createElement("div");
@@ -285,7 +281,9 @@
                 const titulo = escaparHtml(video.titulo);
                 const reproductor = embed
                     ? '<div class="video-wrapper"><iframe class="mbr-embedded-video" src="' + escaparHtml(embed) +
-                      '" width="1280" height="720" frameborder="0" allowfullscreen title="' + titulo + '"></iframe></div>'
+                      '" width="1280" height="720" frameborder="0" allowfullscreen' +
+                      ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
+                      ' referrerpolicy="strict-origin-when-cross-origin" title="' + titulo + '"></iframe></div>'
                     : '<p class="mbr-text mbr-fonts-style display-7"><a href="' + escaparHtml(video.url) +
                       '" target="_blank" rel="noopener">Ver video</a></p>';
                 const descripcion = video.descripcion
@@ -299,7 +297,16 @@
             }).join("");
         }
 
-        cargarVideos();
+        obtenerClienteSupabase()
+            .then(function (cliente) {
+                supabaseClient = cliente;
+                cargarVideos();
+            })
+            .catch(function () {
+                const grid = document.getElementById("videos-grid");
+                if (grid) grid.innerHTML = '<div class="col-12"><p class="mbr-text mbr-fonts-style display-7 align-center">' +
+                    "No se pudieron cargar los videos.</p></div>";
+            });
     </script>
 
 

@@ -36,20 +36,13 @@ as $$
   );
 $$;
 
--- 4. Datos migrados desde psw_change.csv
-insert into public.psw_change (fecha, contrasenia) values
-  ('2026-01-01', 'colombia2026'),
-  ('2026-04-01', 'ccialcol2026'),
-  ('2026-04-07', 'ccialcol2026'),
-  ('2026-04-08', 'ccialcol2026'),
-  ('2026-07-01', '2026ccialcol'),
-  ('2027-01-01', 'ccial2027col'),
-  ('2027-07-01', 'col2027ccial'),
-  ('2028-01-01', 'ccialcol2028');
+-- 4. Las contraseñas NO se guardan en este repositorio (es público).
+--    Cárgalas desde el panel (admin.html > Contraseñas de acceso) o
+--    directamente en el SQL Editor de Supabase.
 
 -- =============================================================
 -- Para cambiar la contraseña en el futuro, solo inserta una fila:
 --   insert into public.psw_change (fecha, contrasenia)
---   values ('2028-07-01', 'nueva_contrasenia');
+--   values ('AAAA-MM-DD', '<nueva_contrasenia>');
 -- La nueva contraseña entra en vigor automáticamente en esa fecha.
 -- =============================================================

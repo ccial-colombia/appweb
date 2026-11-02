@@ -1,10 +1,10 @@
 ﻿<!DOCTYPE html>
-<html  >
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <link rel="shortcut icon" href="assets/images/logo-ccial-v4-isotipo-96x72.png" type="image/x-icon">
+  <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
   <meta name="description" content="CCI América Latina es una asociación de miembros que aman el ministerio de campamentos y lo utilizan como herramienta para evangelizar, discipular y desarrollar lideres. CCI América Latina es la encargada de atender la región que abarca desde México hasta Argentina.">
   
   
@@ -24,6 +24,12 @@
     <script src="assets/js/secciones.js"></script>
 </head>
 <body>
+
+  <script>
+    if (sessionStorage.getItem("auth") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
   
   <section data-bs-version="5.1" class="menu menu3 cid-u5Dmq6dS5G" once="menu" id="menu3-1">
     
@@ -31,37 +37,11 @@
         <div class="container">
             <div class="navbar-brand">
                 <span class="navbar-logo">
-                    <a href="index.html">
+                    <a href="inicio.html">
                         <img src="assets/images/logo-blan-1-299x95.png" alt="CCI AL Colombia" style="height: 3rem;">
                     </a>
                 </span>
-                <!-- <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-5" href="index.html">CCI AL El Salvador</a></span> -->
             </div>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbarSupportedContent" data-bs-target="#navbarSupportedContent" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                <div class="hamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </button>
-            <!--<div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav nav-dropdown nav-right" data-app-modern-menu="true"><li class="nav-item"><a class="nav-link link text-primary display-7" href="index.html">Inicio&nbsp;</a></li>
-                    <li class="nav-item dropdown"><a class="nav-link link text-primary dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Nosotros</a><div class="dropdown-menu" aria-labelledby="dropdown-479"><a class="text-primary dropdown-item display-7" href="historia.html">Historia</a><a class="text-primary dropdown-item display-7" href="valores.html">Valores de CCI AL</a><a class="text-primary show dropdown-item display-7" href="normas.html">Normas de CCI AL</a><a class="text-primary show dropdown-item display-7" href="enciclopedia.html">Enciclopedia de Juegos</a><a class="text-primary show dropdown-item display-7" href="curriculum.html">Curriculum de CCI AL</a></div></li><li class="nav-item dropdown"><a class="nav-link link text-primary dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">CCI AL</a><div class="dropdown-menu" aria-labelledby="dropdown-341"><a class="text-primary show dropdown-item display-7" href="https://www.ccial.org/" target="_blank">CCI AL Oficial</a><div class="dropdown"><a class="text-primary dropdown-item dropdown-toggle display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Nuevo Senderos</a><div class="dropdown-menu dropdown-submenu" aria-labelledby="dropdown-225"><a class="text-primary show dropdown-item display-7" href="https://ccial.org/que-belleza/" target="_blank">¡Qué belleza!</a><a class="text-primary show dropdown-item display-7" href="https://ccial.org/mochila-lista/" target="_blank">Mochila Lista<br></a></div></div><a class="text-primary show dropdown-item display-7" href="testimonio.html">Testimonios</a></div></li><li class="nav-item dropdown open"><a class="nav-link link text-primary dropdown-toggle show display-7" href="index.html#content4-5" data-toggle="dropdown-submenu" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">Miembros</a><div class="dropdown-menu show" aria-labelledby="dropdown-609" data-bs-popper="none"><a class="text-primary show dropdown-item display-7" href="recursos.html">Recursos</a><a class="text-primary show dropdown-item display-7" href="membresia.html">Membresia</a></div></li>
-                    <li class="nav-item"><a class="nav-link link text-primary display-7" href="contactanos.html">Contactanos</a>
-                    </li></ul>
-                <div class="icons-menu">
-                    <a class="iconfont-wrapper" href="https://www.facebook.com/CCIALELSALVADOR?locale=es_LA" target="_blank">
-                        <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>
-                    </a>
-                    <a class="iconfont-wrapper" href="https://www.instagram.com/ccial_elsalvador" target="_blank">
-                        <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
-                    </a>
-                    
-                    
-                </div>
-                
-            </div> -->
         </div>
     </nav>
 </section>
@@ -73,7 +53,7 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="title col-md-12 col-lg-12">
-                <h3 class="mbr-section-title mbr-fonts-style align-center mb-4 display-1"><strong>Los Diez Valores de CCIAL</strong></h3>
+                <h3 class="mbr-section-title mbr-fonts-style align-center mb-4 display-1"><strong>Los Diez Valores de CCI AL</strong></h3>
                 
                 
             </div>
@@ -148,7 +128,7 @@
                                 <div class="col-md">
                                     <h6 class="card-title mbr-fonts-style display-2"><strong>Comunidad bíblica temporal</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7">La Biblia enseña que la vida cristiana debe ser vida en comunidad (koinonía). Por eso, nosotros como Asociación promovemos la formación de una comunidad bíblica temporal (campamentos organizados como grupos pequeños). La comunidad bíblica se caracteriza por el perdón, la aceptación, la sanidad, la transparencia, el crecimiento, las relaciones sanas y la sujeción. El vivir en esta comunidad bíblica temporal nos sirve de modelo para el ideal de una vida comunitaria permanente, que es la Iglesia.
-<br>“Todos los que habían creído estaban juntos, y tenían en común todas las cosas,... y perserverando unánimes cada día en el templo, y partiendo el pan en las casas, comían juntos con alegría y sencillez de corazón” Hechos 2:44, 46.<br></p>
+<br>“Todos los que habían creído estaban juntos, y tenían en común todas las cosas,... y perseverando unánimes cada día en el templo, y partiendo el pan en las casas, comían juntos con alegría y sencillez de corazón” Hechos 2:44, 46.<br></p>
                                 </div>
                                 
                                 <div></div>
@@ -207,7 +187,7 @@
                                     <h6 class="card-title mbr-fonts-style display-2"><strong>Servicio voluntario</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7">Creemos que CCI pertenece a sus miembros, y se sostiene y crece en la medida en que haya voluntarios motivados a involucrarse. El voluntario es la vida de la Asociación. Creemos que el servicio voluntario de los miembros es vital para el cumplimiento de nuestra misión. Creemos que cuanto más se involucra el miembro, más beneficios recibe.
 <br>Creemos que una visión en común, más la unión de los dones individuales, genera trabajo en equipo. El trabajo en equipo permite a la gente común alcanzar resultados fuera de lo común.
-<br>“Pues doy testimonio de que con agrado han dado conforme a sus fuerzas, y aun más allá de sus fuerzas, pidiéndonos con muchos ruegos que les concediésemos el privilegio de participar en este servicio para los santos” II Cor. 3:4.</p>
+<br>“Pues doy testimonio de que con agrado han dado conforme a sus fuerzas, y aun más allá de sus fuerzas, pidiéndonos con muchos ruegos que les concediésemos el privilegio de participar en este servicio para los santos” II Cor. 8:3-4.</p>
                                 </div>
                                 
                                 <div></div>
@@ -267,7 +247,7 @@
                                 <div class="col-md">
                                     <h6 class="card-title mbr-fonts-style display-2"><strong>Somos una familia</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7">La familia de CCI está compuesta por miembros que representan a muchas denominaciones, campamentos, y organizaciones paraeclesiásticas. Pero a todos nos une nuestra declaración de fe, la misión, los Valores Medulares y nuestro amor al ministerio de campamentos.
-<br>Creemos que no es el deber ni el llamado de esta Asociación enseñar doctrinas, sino proveer ayuda e información a nuestros miembros, de manera que los campamentos cristianos sean verdaderamente un instrumento de Dios. Nuestro compromismo es no criticar a la Iglesia ni tratar asuntos eclesiásticos controversiales. Esto nos permite movernos con libertad entre diferentes iglesias, instituciones y organizaciones, y ser un vehículo para la unidad dentro de los círculos evangélicos.
+<br>Creemos que no es el deber ni el llamado de esta Asociación enseñar doctrinas, sino proveer ayuda e información a nuestros miembros, de manera que los campamentos cristianos sean verdaderamente un instrumento de Dios. Nuestro compromiso es no criticar a la Iglesia ni tratar asuntos eclesiásticos controversiales. Esto nos permite movernos con libertad entre diferentes iglesias, instituciones y organizaciones, y ser un vehículo para la unidad dentro de los círculos evangélicos.
 <br>Creemos que las actividades de CCI crean un ambiente propicio para que los cristianos vivan una experiencia completa del cuerpo de Cristo en lo referente al compañerismo y la expresión de nuestra unidad en Cristo.
 <br>“Completad mi gozo, sintiendo lo mismo, teniendo el mismo amor, unánimes, sintiendo una misma cosa” Fil. 2:2.</p>
                                 </div>
@@ -304,7 +284,7 @@
                                 <div class="col-md">
                                     <h6 class="card-title mbr-fonts-style display-2"><strong>El espíritu de compartir</strong></h6>
                                     <p class="mbr-text mbr-fonts-style display-7">Creemos que todo lo que tenemos como Asociación, lo hemos recibido de otros. Parte de ello es herencia de otras generaciones, y otra parte la hemos creado nosotros. Todo lo que tenemos le pertenece a Dios. Es para su gloria y bendición de su pueblo el compartir con generosidad, tanto las ideas como los recursos.
-<br>“En todo, os he enseñado que, trabajando así, se debe ayudar a los necesitados, y recordar las palabras del Señor de Jesús, que dijo: Más bienaventurado es dar que recibir” Hechos 20:35.<br></p>
+<br>“En todo, os he enseñado que, trabajando así, se debe ayudar a los necesitados, y recordar las palabras del Señor Jesús, que dijo: Más bienaventurado es dar que recibir” Hechos 20:35.<br></p>
                                 </div>
                                 
                                 <div></div>
@@ -367,22 +347,45 @@
     </div>
 </section>
 
-<section data-bs-version="5.1" class="footer7 cid-uBHPk2pUQZ" once="footers" id="footer7-1q">
+<section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
 
-    
 
-    
+
+
 
     <div class="container">
-        <div class="media-container-row align-center mbr-white">
-            <div class="col-12">
-                <p class="mbr-text mb-0 mbr-fonts-style display-7">
-                    © Copyright 2025 - All Rights Reserved
-                </p>
-            </div>
+      <div class="row">
+        <div class="col-12 col-lg-6 center mt-2 mb-3">
+          <p class="mbr-fonts-style copyright mb-0 display-7">
+            © Copyright 2026 - Todos los derechos reservados</p>
         </div>
+        <div class="col-12 col-lg-6 center">
+          <div class="row-links mt-2 mb-3">
+            <ul class="row-links-soc">
+
+
+
+
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="https://www.facebook.com/487429831785922" class="text-white text-primary"
+                  target="_blank" aria-label="Facebook" title="Facebook"><span class="socicon-facebook" style="font-size:1.5rem;line-height:1;"></span></a></li>
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="https://www.instagram.com/ccial.colombia/" class="text-white text-primary"
+                  target="_blank" aria-label="Instagram" title="Instagram"><span class="socicon-instagram" style="font-size:1.5rem;line-height:1;"></span></a></li>
+              <li class="row-links-soc-item mbr-fonts-style display-7">
+                <a href="https://www.youtube.com/@CCIALCOLOMBIA" class="text-white text-primary"
+                  target="_blank" aria-label="YouTube" title="YouTube"><span class="socicon-youtube" style="font-size:1.5rem;line-height:1;"></span></a>
+              </li>
+              <li class="row-links-soc-item mbr-fonts-style display-7"><a
+                  href="mailto:comunicacionesccialcol@gmail.com?subject=Consulta%20desde%20Pagina%20Web"
+                  class="text-white text-primary" aria-label="Correo electrónico" title="Correo electrónico"><span class="socicon-mail" style="font-size:1.5rem;line-height:1;"></span></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-</section><script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>  <script src="assets/smoothscroll/smooth-scroll.js"></script>  <script src="assets/ytplayer/index.js"></script>  <script src="assets/dropdown/js/navbar-dropdown.js"></script>  <script src="assets/theme/js/script.js"></script>  
+  </section>
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>  <script src="assets/smoothscroll/smooth-scroll.js"></script>  <script src="assets/ytplayer/index.js"></script>  <script src="assets/dropdown/js/navbar-dropdown.js"></script>  <script src="assets/theme/js/script.js"></script>  
   
   
   <input name="animation" type="hidden">

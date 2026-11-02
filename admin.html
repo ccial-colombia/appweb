@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-    <link rel="shortcut icon" href="assets/images/CCI%20AL.png" type="image/x-icon">
+    <link rel="icon" href="assets/images/favicon-192x192.png" type="image/png">
     <title>Administración | CCI AL/Colombia</title>
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <style>
         body { background: #f4f5f7; }
         .celda-texto { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -27,7 +27,7 @@
     <div id="vista-login">
         <div class="card shadow" style="max-width: 400px; width: 100%;">
             <div class="card-body p-4 text-center">
-                <img src="assets/images/CCI AL.png" alt="CCI AL/Colombia" style="height: 70px;" class="mb-3">
+                <img src="assets/images/logo-cci-al-panel.png" alt="CCI AL/Colombia" style="height: 70px;" class="mb-3">
                 <h4 class="mb-3">Panel de administración</h4>
                 <input type="email" id="login-email" class="form-control mb-2" placeholder="Correo" autocomplete="username">
                 <input type="password" id="login-password" class="form-control mb-3" placeholder="Contraseña" autocomplete="current-password">
@@ -81,15 +81,15 @@
                 <div class="modal-footer">
                     <span id="modal-error" class="text-danger me-auto" style="display:none;"></span>
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-primary" onclick="guardar()">Guardar</button>
+                    <button class="btn btn-primary" id="btn-guardar" onclick="guardar()">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>
         const supabaseClient = supabase.createClient(
             "https://gmcuzmsckwtdvurboobh.supabase.co",
@@ -482,7 +482,19 @@
             });
         }
 
+        // Evita guardar dos veces si se hace doble clic (crearía registros duplicados).
         async function guardar() {
+            const boton = document.getElementById("btn-guardar");
+            if (boton.disabled) return;
+            boton.disabled = true;
+            try {
+                await guardarRegistro();
+            } finally {
+                boton.disabled = false;
+            }
+        }
+
+        async function guardarRegistro() {
             const def = TABLAS[tablaActual];
             const registro = {};
             const errorModal = document.getElementById("modal-error");
