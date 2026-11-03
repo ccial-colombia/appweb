@@ -78,10 +78,10 @@
       </div>
       <div class="row justify-content-center">
         <div class="col-md-12 content-head">
-          <h1 class="mbr-section-title mbr-fonts-style mb-4 titulo-cci-al">
+          <h1 data-contenido="index.bienvenida_titulo" class="mbr-section-title mbr-fonts-style mb-4 titulo-cci-al">
             <strong>Bienvenido a CCI AL/Colombia</strong>
           </h1>
-          <p class="mbr-text mbr-fonts-style mb-4 texto-cci-al">Nos alegra muchísimo tenerte aquí. Como parte de esta
+          <p data-contenido="index.bienvenida_texto" class="mbr-text mbr-fonts-style mb-4 texto-cci-al">Nos alegra muchísimo tenerte aquí. Como parte de esta
             gran familia, queremos que te sientas en casa y disfrutes de todos los beneficios que ser miembro de CCI AL/Colombia tiene para ti.
             <br><br><strong>¡Tu compromiso y amor por los campamentos nos inspiran cada día!</strong>
           </p>
@@ -464,8 +464,8 @@
     </style>
 
     <div class="section-title">
-      <h2>Herramientas Útiles</h2>
-      <p>Información en tiempo real para nuestros miembros</p>
+      <h2 data-contenido="index.widgets_titulo">Herramientas Útiles</h2>
+      <p data-contenido="index.widgets_texto">Información en tiempo real para nuestros miembros</p>
     </div>
 
     <div class="widgets-row">
@@ -473,7 +473,7 @@
       <div class="widget-card widget-currency" data-seccion="index.widget_divisas" id="currency-widget">
         <div class="widget-header">
           <div class="widget-icon">💱</div>
-          <h3>Conversor de Moneda</h3>
+          <h3 data-contenido="index.widget_divisas_titulo">Conversor de Moneda</h3>
           <span class="widget-badge">EN VIVO</span>
         </div>
 
@@ -521,7 +521,7 @@
       <div class="widget-card widget-weather" data-seccion="index.widget_clima" id="weather-widget">
         <div class="widget-header">
           <div class="widget-icon">🌤️</div>
-          <h3>Clima Actual</h3>
+          <h3 data-contenido="index.widget_clima_titulo">Clima Actual</h3>
           <span class="widget-badge">TIEMPO REAL</span>
         </div>
 
@@ -893,7 +893,7 @@
     <div class="container">
       <div class="row">
         <div class="col-12 col-lg-6 center mt-2 mb-3">
-          <p class="mbr-fonts-style copyright mb-0 display-7">
+          <p data-contenido="global.copyright" class="mbr-fonts-style copyright mb-0 display-7">
             © Copyright 2026 - Todos los derechos reservados</p>
         </div>
         <div class="col-12 col-lg-6 center">
@@ -943,8 +943,8 @@
     <div style="position:relative;background:white;padding:30px;border-radius:10px;max-width:400px;width:100%;text-align:center;">
       <button type="button" class="btn-close" aria-label="Cerrar" onclick="cerrarLogin()"
         style="position:absolute;top:12px;right:12px;"></button>
-      <h3 id="loginTitulo">Acceso exclusivo para miembros de CCI AL/Colombia</h3>
-      <p>Si deseas tener acceso contáctate con:
+      <h3 data-contenido="index.acceso_titulo" id="loginTitulo">Acceso exclusivo para miembros de CCI AL/Colombia</h3>
+      <p data-contenido="index.acceso_texto">Si deseas tener acceso contáctate con:
         <a href="mailto:miembrosccialcol@gmail.com?subject=Acceso%20para%20miembros">miembrosccialcol@gmail.com</a></p>
       <input type="password" id="password" placeholder="Contraseña" class="form-control mb-3" autocomplete="current-password">
       <button type="button" class="btn btn-primary" id="btn-ingresar" onclick="validar()">Ingresar</button>

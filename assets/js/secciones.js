@@ -6,6 +6,9 @@
  * su página, su clave, su título y si está habilitado; aquí se consulta esa
  * tabla y se quitan del DOM los bloques deshabilitados.
  *
+ * Pone en los elementos marcados con data-contenido="clave" el texto guardado
+ * en la tabla "contenido_secciones" (admin.html > Contenido de secciones).
+ *
  * También cambia las imágenes marcadas con data-imagen="clave" por las que
  * estén guardadas en la tabla "imagenes_sitio" (admin.html > Imágenes del sitio).
  *
@@ -29,9 +32,11 @@
 
     // Oculta los bloques administrables hasta saber cuáles están habilitados,
     // para que los deshabilitados no alcancen a verse al abrir la página.
-    // Lo mismo con las imágenes administrables, para que no se vea la anterior.
+    // Lo mismo con los textos e imágenes administrables, para que no se vea
+    // la versión anterior antes de la guardada en el panel.
     var estilo = document.createElement("style");
     estilo.textContent = "." + CLASE_CARGANDO + " [data-seccion]," +
+        "." + CLASE_CARGANDO + " [data-contenido]," +
         "." + CLASE_CARGANDO + " img[data-imagen]{visibility:hidden}";
     document.head.appendChild(estilo);
     document.documentElement.classList.add(CLASE_CARGANDO);
@@ -88,17 +93,19 @@
     // Empieza a descargar la librería de inmediato, sin esperar al resto del HTML.
     obtenerClienteSupabase();
 
-    // Quita los bloques cuya clave está marcada como no visible. Las claves que
-    // no existan en la base de datos se dejan visibles.
+    // Quita los bloques (data-seccion) y textos (data-contenido) cuya clave está
+    // marcada como no visible. Las claves que no existan en la base de datos
+    // se dejan visibles.
     function aplicar(filas) {
         var deshabilitadas = {};
         filas.forEach(function (fila) {
             if (fila.visible === false) deshabilitadas[fila.clave] = true;
         });
-        var bloques = document.querySelectorAll("[data-seccion]");
+        var bloques = document.querySelectorAll("[data-seccion], [data-contenido]");
         Array.prototype.forEach.call(bloques, function (bloque) {
-            if (deshabilitadas[bloque.getAttribute("data-seccion")]) {
-                bloque.parentNode.removeChild(bloque);
+            if (deshabilitadas[bloque.getAttribute("data-seccion")] ||
+                deshabilitadas[bloque.getAttribute("data-contenido")]) {
+                if (bloque.parentNode) bloque.parentNode.removeChild(bloque);
             }
         });
     }
@@ -113,30 +120,69 @@
         return claves;
     }
 
-    // Inserta el contenido con formato (tabla contenido_secciones) en los
-    // marcadores <... data-contenido="clave">. Solo se consulta si la página
-    // tiene al menos un marcador, así las demás no pagan la consulta extra.
-    function aplicarContenido(cliente) {
+    // Trae el texto con formato (tabla contenido_secciones) de los marcadores
+    // <... data-contenido="clave"> de la página. Solo se consulta si la página
+    // tiene al menos un marcador. Devuelve { clave: html }.
+    function consultarContenido(cliente) {
         var marcadores = document.querySelectorAll("[data-contenido]");
-        if (marcadores.length === 0) return Promise.resolve();
-
-        var claves = clavesUnicas(marcadores, "data-contenido");
+        if (marcadores.length === 0) return Promise.resolve(null);
 
         return cliente
             .from("contenido_secciones")
             .select("seccion_clave, contenido")
-            .in("seccion_clave", claves)
+            .in("seccion_clave", clavesUnicas(marcadores, "data-contenido"))
             .then(function (respuesta) {
-                if (!respuesta || respuesta.error || !respuesta.data) return;
+                if (!respuesta || respuesta.error || !respuesta.data) return null;
                 var porClave = {};
                 respuesta.data.forEach(function (fila) {
                     porClave[fila.seccion_clave] = fila.contenido;
                 });
-                Array.prototype.forEach.call(marcadores, function (m) {
-                    var clave = m.getAttribute("data-contenido");
-                    if (porClave[clave] != null) m.innerHTML = porClave[clave];
-                });
+                return porClave;
             });
+    }
+
+    // Títulos, párrafos y otros elementos que solo admiten texto: ahí no se
+    // pueden poner los <p> del editor, así que cada <p> pasa a ser una línea
+    // separada con <br> y el elemento conserva su propio estilo.
+    var SOLO_TEXTO = /^(H[1-6]|P|SPAN|A|LABEL|BUTTON|SMALL|STRONG|EM)$/;
+
+    function escaparTexto(texto) {
+        var div = document.createElement("div");
+        div.textContent = texto;
+        return div.innerHTML;
+    }
+
+    function comoLineas(html) {
+        var temporal = document.createElement("div");
+        temporal.innerHTML = html;
+        var lineas = [];
+        Array.prototype.forEach.call(temporal.childNodes, function (nodo) {
+            if (nodo.nodeType === 1 && /^(P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/.test(nodo.tagName)) {
+                lineas.push(nodo.innerHTML === "<br>" ? "" : nodo.innerHTML);
+            } else if (nodo.nodeType === 1 && /^(OL|UL)$/.test(nodo.tagName)) {
+                // Listas del editor: una línea por elemento, con viñeta o número.
+                Array.prototype.forEach.call(nodo.children, function (li, i) {
+                    var numerada = li.getAttribute("data-list") === "ordered" ||
+                        (nodo.tagName === "OL" && !li.hasAttribute("data-list"));
+                    lineas.push((numerada ? (i + 1) + ". " : "• ") + li.innerHTML);
+                });
+            } else {
+                // Texto suelto (sin <p>): se suma a la línea en curso.
+                if (lineas.length === 0) lineas.push("");
+                lineas[lineas.length - 1] += nodo.nodeType === 1 ? nodo.outerHTML : escaparTexto(nodo.textContent);
+            }
+        });
+        return lineas.join("<br>");
+    }
+
+    // Pone el texto guardado en cada marcador. Sin texto guardado, queda el del HTML.
+    function ponerContenido(porClave) {
+        if (!porClave) return;
+        Array.prototype.forEach.call(document.querySelectorAll("[data-contenido]"), function (m) {
+            var html = porClave[m.getAttribute("data-contenido")];
+            if (html == null || html === "") return;
+            m.innerHTML = SOLO_TEXTO.test(m.tagName) ? comoLineas(html) : html;
+        });
     }
 
     // Pone en cada elemento <... data-imagen="clave"> la imagen guardada en la
@@ -187,17 +233,21 @@
     function aplicarSecciones() {
         obtenerClienteSupabase()
             .then(function (cliente) {
+                // Las tres consultas (secciones, textos e imágenes) van en paralelo.
                 var secciones = cliente
                     .from("informacion_general")
                     .select("clave, visible")
                     .eq("pagina", paginaActual())
                     .then(function (respuesta) {
                         if (respuesta && !respuesta.error && respuesta.data) aplicar(respuesta.data);
-                        return aplicarContenido(cliente);
-                    });
-                // Las imágenes se consultan al mismo tiempo que las secciones.
+                    })
+                    .catch(ignorarError);
+                var contenido = consultarContenido(cliente).catch(ignorarError);
                 return Promise.all([
-                    secciones.catch(ignorarError),
+                    // Los textos se ponen después de quitar los bloques ocultos.
+                    Promise.all([secciones, contenido]).then(function (resultados) {
+                        ponerContenido(resultados[1]);
+                    }),
                     aplicarImagenes(cliente).catch(ignorarError)
                 ]);
             })

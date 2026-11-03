@@ -2,16 +2,37 @@
 
 Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 
+## Tablas que usa la aplicacion
+
+| Tabla | La usa | Para que |
+|---|---|---|
+| `psw_change` (+ funcion `validar_password`) | `index.html`, panel | Contraseña de acceso de miembros |
+| `informacion_general` | todas las paginas, panel | Catalogo de secciones y textos; mostrar u ocultar cada uno |
+| `contenido_secciones` | todas las paginas, panel | Textos editables (`data-contenido`) |
+| `imagenes_sitio` | todas las paginas, panel | Imagenes editables (`data-imagen`) |
+| `fincas`, `transporte`, `juegos`, `cocina`, `graficos`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
+| `cursos`, `talleres` | `exclusivo.html`, panel | Cursos y talleres |
+| `videos` | `equipados.html`, panel | Videos exclusivos |
+| `productos` | `campatienda.html`, panel | Catalogo de CampaTienda |
+
+Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos e imagenes del sitio) y `testimonios` (fotos de testimonios).
+
 ## Archivos
 
-- `migrations/20260623000000_initial_schema.sql`: esquema inicial, RLS, funciones, triggers y buckets de Storage.
-- `seed.sql`: datos base del sitio actual: paginas, navegacion, redes, secciones principales, galerias, videos, cursos, talleres y eventos.
-- `supabase_backend.sql`: tablas que usa el panel `admin.html` (fincas, transporte, juegos, cocina, graficos, testimonios, cursos, talleres, videos, informacion_general, psw_change).
+- `supabase_setup.sql`: tabla `psw_change` y funcion `validar_password` (acceso de miembros).
+- `supabase_contenido.sql`: tablas de la pagina Comunidad (fincas, transporte, juegos, cocina, graficos, testimonios) con datos de ejemplo.
+- `supabase_backend.sql`: tablas `cursos`, `talleres`, `videos`, `informacion_general` y `contenido_secciones`, y permisos de administracion para usuarios autenticados.
+- `supabase_migracion_fincas.sql` / `supabase_migracion_fotos_testimonios.sql`: columnas `ciudad` y `capacidad` en fincas, foto en testimonios y bucket `testimonios`.
 - `secciones_visibilidad.sql`: agrega a `informacion_general` las columnas `pagina`, `orden` y `visible`, y carga el catalogo de secciones visuales de cada pagina.
 - `contenido_secciones.sql`: crea la tabla `contenido_secciones`, que asocia cada seccion (`informacion_general.clave`) con un texto con formato editable desde el panel.
+- `contenido_inicio.sql`: precarga los textos de `inicio.html` (encabezado, vision, mision, quienes somos).
 - `cursos_talleres.sql` / `cursos_talleres_datos.sql`: nueva estructura de `cursos` y `talleres` (imagen, nombre, descripcion corta, descripcion, orden, visible) y carga de los datos actuales.
-- `imagenes_sitio.sql`: crea la tabla `imagenes_sitio` con las 61 imagenes fijas del sitio (logo, favicon, portadas, galeria, tomos, normas, valores y fondos) para cambiarlas desde el panel, pestaña "Imagenes del sitio". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `campatienda_productos.sql`: crea la tabla `productos` (foto, nombre, descripcion, precio, tallas u opciones, disponible, orden, visible) que muestra `campatienda.html` y se administra en el panel, pestaña "CampaTienda". Carga los 7 productos iniciales con sus fotos de `assets/images/campatienda/`. Se puede ejecutar mas de una vez.
+- `imagenes_sitio.sql`: crea la tabla `imagenes_sitio` con las 61 imagenes fijas del sitio (logo, favicon, portadas, galeria, tomos, normas, valores y fondos) para cambiarlas desde el panel, pestaña "Imagenes del sitio". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `textos_editables.sql`: registra los 123 textos de las paginas (titulos y parrafos con `data-contenido`) en `informacion_general` y copia su texto actual a `contenido_secciones`, para editarlos en el panel, pestaña "Contenido de secciones". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
+
+El esquema inicial que creaba esas tablas (`migrations/20260623000000_initial_schema.sql` y `seed.sql`) se movio a `not_used/supabase/` para que no se vuelva a ejecutar.
 
 ## Secciones visuales
 
@@ -23,20 +44,32 @@ que no tengan fila en la tabla se muestran siempre.
 Para agregar una seccion nueva: pon `data-seccion="pagina.clave"` en el HTML e inserta la
 fila correspondiente en `informacion_general` (o desde el panel, en "Secciones de la web").
 
-## Contenido de secciones
+## Textos editables (Contenido de secciones)
 
-La tabla `contenido_secciones` guarda un texto con formato por seccion. Desde el panel,
-en "Contenido de secciones", se elige la seccion en un desplegable y se escribe el texto
-en un editor embebido (Quill).
-
-Para mostrar ese texto en una pagina, agrega un marcador donde quieras que aparezca:
+Cada texto administrable del HTML lleva `data-contenido="clave"`, con una fila en
+`informacion_general` (para elegirlo en el panel) y su texto en `contenido_secciones`:
 
 ```html
-<div data-contenido="comunidad.fincas"></div>
+<h6 data-contenido="valores.valor_01_titulo" class="card-title mbr-fonts-style display-2"><strong>Dependencia de Dios</strong></h6>
+<p data-contenido="valores.valor_01_texto" class="mbr-text mbr-fonts-style display-7">Creemos que Dios es soberano...</p>
+<div data-contenido="inicio.quienes_somos" class="mbr-text mbr-fonts-style display-7 mb-3">...</div>
 ```
 
-`secciones.js` detecta esos marcadores, consulta `contenido_secciones` y reemplaza su
-contenido con el HTML guardado. Si una pagina no tiene marcadores, no se hace la consulta.
+`secciones.js` consulta `contenido_secciones` con las claves de la pagina y pone el texto
+guardado antes de mostrar la pagina:
+
+- En titulos y parrafos (`h1`-`h6`, `p`, ...) cada linea del editor se pone separada con
+  `<br>`, y el elemento conserva su clase, tamaño y color.
+- En un `div` se pone el HTML del editor tal cual (parrafos, listas, alineacion).
+- Si la clave no tiene texto guardado, o la consulta falla, queda el texto del HTML.
+- Si la fila de `informacion_general` tiene `visible = false`, el texto se quita de la pagina.
+- La clave `global.copyright` (pie de pagina) se usa en todas las paginas.
+
+En el panel, "Contenido de secciones" se puede filtrar por pagina; el desplegable de
+secciones esta agrupado por pagina.
+
+Para hacer editable un texto nuevo: pon `data-contenido="pagina.nombre"` en el elemento,
+inserta su fila en `informacion_general` y luego escribe el texto en el panel.
 
 ## Imagenes del sitio
 
@@ -56,22 +89,26 @@ Las claves `global.*` (logo y favicon) se usan en todas las paginas.
 Las imagenes de cursos, talleres, testimonios y productos se administran en sus propias
 pestañas del panel.
 
-## Orden de ejecucion
+## Orden de ejecucion (base nueva)
 
 1. Crea el proyecto en Supabase.
-2. Ejecuta la migracion SQL.
-3. Ejecuta `seed.sql`.
-4. Crea el primer usuario desde Supabase Auth.
-5. Promueve ese usuario a `superadmin` desde el SQL Editor:
+2. En el SQL Editor ejecuta, en este orden:
+   1. `supabase_setup.sql`
+   2. `supabase_contenido.sql`
+   3. `supabase_backend.sql`
+   4. `supabase_migracion_fincas.sql`
+   5. `supabase_migracion_fotos_testimonios.sql`
+   6. `secciones_visibilidad.sql`
+   7. `contenido_secciones.sql`
+   8. `contenido_inicio.sql`
+   9. `cursos_talleres.sql`
+   10. `cursos_talleres_datos.sql`
+   11. `campatienda_productos.sql`
+   12. `imagenes_sitio.sql`
+   13. `textos_editables.sql`
+3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
+4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
+5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).
 
-```sql
-update public.profiles
-set role = 'superadmin'
-where id = '<AUTH_USER_ID>';
-```
-
-## Notas
-
-- `products`, `community_resources` y `testimonials` quedan listos, pero sin seed de contenido porque el HTML actual tiene productos sin datos completos, recursos comunitarios vacios y testimonios de plantilla.
-- El bucket `media` es privado y se lee por usuarios autenticados. El bucket `avatars` es publico.
-- Las paginas antiguas `valores`, `normas` y `enciclopedia` se incluyen en `pages`, pero quedan inactivas en la navegacion principal.
+En la base actual (que se creo con el esquema inicial) ejecuta ademas, una vez,
+`limpieza_tablas_sin_uso.sql`.

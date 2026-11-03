@@ -211,10 +211,19 @@
                     { campo: "visible", etiqueta: "Habilitado en la web", tipo: "checkbox" }
                 ]
             },
+            // Textos de las páginas (data-contenido en el HTML; ver supabase/textos_editables.sql).
+            // La página de cada fila sale de su sección, para filtrar y ordenar.
             contenido_secciones: {
-                titulo: "Contenido de secciones", pk: "id", campos: [
+                titulo: "Contenido de secciones", pk: "id",
+                paginaDeFila: function (fila) { return seccionPorClave(fila.seccion_clave).pagina; },
+                textoSinPagina: "Global (todas las páginas)",
+                ordenarFilas: function (a, b) {
+                    return posicionSeccion(a.seccion_clave) - posicionSeccion(b.seccion_clave);
+                },
+                campos: [
                     { campo: "seccion_clave", etiqueta: "Sección", tipo: "select", opcionesDinamicas: "secciones", placeholder: "— Elegir sección —", requerido: true },
-                    { campo: "contenido", etiqueta: "Contenido", tipo: "richtext" }
+                    { campo: "contenido", etiqueta: "Contenido", tipo: "richtext",
+                      ayuda: "Cada línea del editor es una línea en la página. Los títulos y párrafos mantienen el tamaño y color de la página: usa negrita, cursiva, subrayado o enlaces para resaltar. Si dejas el texto vacío, la página muestra el texto original." }
                 ]
             },
             psw_change: {
@@ -237,16 +246,27 @@
         async function cargarSeccionesDisponibles() {
             const { data } = await supabaseClient
                 .from("informacion_general")
-                .select("clave, pagina, titulo, orden")
-                .order("pagina", { ascending: true })
-                .order("orden", { ascending: true });
+                .select("id, clave, pagina, titulo, orden")
+                .order("pagina", { ascending: true, nullsFirst: true })
+                .order("orden", { ascending: true })
+                .order("id", { ascending: true });
             seccionesDisponibles = data || [];
+        }
+
+        function seccionPorClave(clave) {
+            return seccionesDisponibles.find(function (x) { return x.clave === clave; }) || {};
+        }
+
+        // Posición de la sección en el catálogo (para ordenar por página y sección).
+        function posicionSeccion(clave) {
+            const i = seccionesDisponibles.findIndex(function (x) { return x.clave === clave; });
+            return i === -1 ? Number.MAX_SAFE_INTEGER : i;
         }
 
         // Nombre legible de una sección a partir de su clave.
         function etiquetaSeccion(clave) {
-            const s = seccionesDisponibles.find(function (x) { return x.clave === clave; });
-            if (!s) return clave;
+            const s = seccionPorClave(clave);
+            if (!s.clave) return clave;
             return (s.pagina ? s.pagina + " · " : "") + (s.titulo || s.clave);
         }
 
@@ -343,7 +363,10 @@
             });
             consulta = consulta.order(def.pk, { ascending: true });
 
+            // Las tablas que se filtran por la página de su sección necesitan el catálogo al día.
+            const catalogo = def.paginaDeFila ? cargarSeccionesDisponibles() : null;
             const { data, error } = await consulta;
+            await catalogo;
             // Si se cambió de pestaña mientras cargaba, esta respuesta ya no sirve.
             if (tablaPedida !== tablaActual) return;
             if (error) {
@@ -351,21 +374,26 @@
                 cargarDatos.filas = [];
             } else {
                 cargarDatos.filas = data || [];
+                if (def.ordenarFilas) cargarDatos.filas.sort(def.ordenarFilas);
             }
             prepararFiltroPagina();
             pintarFilas();
         }
 
-        // Valor de la columna "pagina" para el filtro ("-" = sin página).
+        // Página de una fila para el filtro ("-" = sin página): la columna "pagina"
+        // o, si la tabla no la tiene, la que indique su definición (paginaDeFila).
         function valorFiltro(fila) {
-            return vacio(fila.pagina) ? "-" : fila.pagina;
+            const def = TABLAS[tablaActual];
+            const pagina = def.paginaDeFila ? def.paginaDeFila(fila) : fila.pagina;
+            return vacio(pagina) ? "-" : pagina;
         }
 
         // Muestra el filtro por página en las tablas que tienen esa columna.
         function prepararFiltroPagina() {
             const def = TABLAS[tablaActual];
             const filtro = document.getElementById("filtro-pagina");
-            const campoPagina = def.campos.find(function (c) { return c.campo === "pagina"; });
+            const campoPagina = def.campos.find(function (c) { return c.campo === "pagina"; }) ||
+                (def.paginaDeFila ? { textoVacio: def.textoSinPagina } : null);
             if (!campoPagina) {
                 filtro.style.display = "none";
                 return;
@@ -513,15 +541,26 @@
                         '<div id="campo-' + c.campo + '"></div>' + ayuda + "</div>";
                 }
                 if (c.tipo === "select") {
-                    const lista = c.opcionesDinamicas === "secciones"
-                        ? seccionesDisponibles.map(function (s) {
-                            return { valor: s.clave, texto: etiquetaSeccion(s.clave) };
-                        })
-                        : (c.opciones || []).map(function (o) { return { valor: o, texto: o }; });
-                    const opciones = lista.map(function (o) {
+                    const opcion = function (o) {
                         return '<option value="' + escaparHtml(o.valor) + '"' +
                             (o.valor === valor ? " selected" : "") + ">" + escaparHtml(o.texto) + "</option>";
-                    }).join("");
+                    };
+                    let opciones;
+                    if (c.opcionesDinamicas === "secciones") {
+                        // Agrupadas por página para encontrarlas fácil en una lista larga.
+                        const grupos = [];
+                        seccionesDisponibles.forEach(function (s) {
+                            const nombre = s.pagina || "Global (todas las páginas)";
+                            let grupo = grupos.find(function (g) { return g.nombre === nombre; });
+                            if (!grupo) grupos.push(grupo = { nombre: nombre, opciones: [] });
+                            grupo.opciones.push({ valor: s.clave, texto: s.titulo || s.clave });
+                        });
+                        opciones = grupos.map(function (g) {
+                            return '<optgroup label="' + escaparHtml(g.nombre) + '">' + g.opciones.map(opcion).join("") + "</optgroup>";
+                        }).join("");
+                    } else {
+                        opciones = (c.opciones || []).map(function (o) { return opcion({ valor: o, texto: o }); }).join("");
+                    }
                     const placeholder = c.placeholder || "— Seleccionar —";
                     return '<div class="mb-3">' + etiqueta +
                         '<select class="form-select" id="campo-' + c.campo + '">' +
