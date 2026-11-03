@@ -12,6 +12,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `fincas`, `transporte`, `juegos`, `cocina`, `graficos`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
 | `cursos`, `talleres` | `exclusivo.html`, panel | Cursos y talleres |
 | `videos` | `equipados.html`, panel | Videos exclusivos |
+| `descargables` | `equipados.html`, panel | Recursos descargables (PDF) |
 | `productos` | `campatienda.html`, panel | Catálogo de CampaTienda |
 
 ## Table `psw_change`
@@ -146,6 +147,22 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `orden` | `int4` |  Nullable |
 | `visible` | `bool` |  Nullable |
 
+## Table `descargables`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int4` | Primary |
+| `categoria` | `text` |  Check (`isl`, `juegos`) |
+| `titulo` | `text` |  |
+| `descripcion` | `text` |  Nullable |
+| `archivo_url` | `text` |  |
+| `tamano_bytes` | `int4` |  Nullable |
+| `imagen_url` | `text` |  Nullable |
+| `orden` | `int4` |  |
+| `visible` | `bool` |  |
+
 ## Table `informacion_general`
 
 ### Columns
@@ -264,6 +281,13 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 |--------|---------|-------|--------|-------|------------|
 | `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
 | `lectura publica` | SELECT | public | PERMISSIVE | `true` | — |
+
+### `descargables`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
+| `lectura publica` | SELECT | public | PERMISSIVE | `(visible = true)` | — |
 
 ### `cursos`
 

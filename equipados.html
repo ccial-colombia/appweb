@@ -33,6 +33,7 @@
     </noscript>
     <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=F476R5">
     <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=F476R5" type="text/css">
+    <link rel="stylesheet" href="assets/css/descargables.css">
 
 
 
@@ -186,6 +187,35 @@
         </div>
     </section>
 
+    <!-- 3. Recursos descargables: las tarjetas se arman con assets/js/descargables.js
+         a partir de la tabla "descargables" de Supabase (admin.html > Recursos descargables).
+         Cada grupo (data-categoria) muestra los PDF de su categoría y se oculta si no tiene ninguno. -->
+    <section data-bs-version="5.1" class="article12 cid-v5yLSKvxjf rd-seccion" data-seccion="equipados.descargables" id="descargables">
+
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-12 col-lg-11">
+                    <h3 data-contenido="equipados.descargables_titulo" class="mbr-section-title mbr-fonts-style mb-4 mt-0 display-5"><strong>3. Recursos descargables</strong></h3>
+                    <p data-contenido="equipados.descargables_texto" class="mbr-text mbr-fonts-style display-7">Aquí encontrarás diferentes recursos que puedes
+                        descargar, ISL (Ideas Sin Límite) que te ayudarán a tener actividades para diferentes circunstancias.
+                        También encontrarás algunos juegos de nuestra Enciclopedia de Juegos Creadores de Ambiente.</p>
+
+                    <p id="rd-estado" class="rd-estado" role="status">Cargando recursos…</p>
+
+                    <div class="rd-grupo" data-categoria="isl" hidden>
+                        <h4 data-contenido="equipados.descargables_isl_titulo" class="rd-grupo-titulo">ISL · Ideas Sin Límite</h4>
+                        <div class="row g-3 rd-lista"></div>
+                    </div>
+
+                    <div class="rd-grupo" data-categoria="juegos" hidden>
+                        <h4 data-contenido="equipados.descargables_juegos_titulo" class="rd-grupo-titulo">Enciclopedia de Juegos Creadores de Ambiente</h4>
+                        <div class="row g-3 rd-lista"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
 
 
@@ -230,6 +260,7 @@
     <script src="assets/dropdown/js/navbar-dropdown.js"></script>
     <script src="assets/playervimeo/vimeo_player.js"></script>
     <script src="assets/theme/js/script.js"></script>
+    <script src="assets/js/descargables.js"></script>
 
     <script>
         // Carga los videos exclusivos administrados desde Supabase (tabla "videos"),

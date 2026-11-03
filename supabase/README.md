@@ -13,9 +13,10 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 | `fincas`, `transporte`, `juegos`, `cocina`, `graficos`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
 | `cursos`, `talleres` | `exclusivo.html`, panel | Cursos y talleres |
 | `videos` | `equipados.html`, panel | Videos exclusivos |
+| `descargables` | `equipados.html`, panel | Recursos descargables (PDF de ISL y de la Enciclopedia de Juegos) |
 | `productos` | `campatienda.html`, panel | Catalogo de CampaTienda |
 
-Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos e imagenes del sitio) y `testimonios` (fotos de testimonios).
+Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
 
 ## Archivos
 
@@ -30,6 +31,7 @@ Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos e image
 - `campatienda_productos.sql`: crea la tabla `productos` (foto, nombre, descripcion, precio, tallas u opciones, disponible, orden, visible) que muestra `campatienda.html` y se administra en el panel, pestaña "CampaTienda". Carga los 7 productos iniciales con sus fotos de `assets/images/campatienda/`. Se puede ejecutar mas de una vez.
 - `imagenes_sitio.sql`: crea la tabla `imagenes_sitio` con las 61 imagenes fijas del sitio (logo, favicon, portadas, galeria, tomos, normas, valores y fondos) para cambiarlas desde el panel, pestaña "Imagenes del sitio". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `textos_editables.sql`: registra los 123 textos de las paginas (titulos y parrafos con `data-contenido`) en `informacion_general` y copia su texto actual a `contenido_secciones`, para editarlos en el panel, pestaña "Contenido de secciones". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `recursos_descargables.sql`: crea la tabla `descargables` (tipo `isl` o `juegos`, titulo, descripcion, PDF, tamaño, portada opcional, orden, visible) y el bucket `descargables` (solo PDF). `equipados.html` la muestra en "3. Recursos descargables", agrupada por tipo, y se administra en el panel, pestaña "Recursos descargables". Tambien registra la seccion `equipados.descargables` y sus 4 textos editables. Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
 
 El esquema inicial que creaba esas tablas (`migrations/20260623000000_initial_schema.sql` y `seed.sql`) se movio a `not_used/supabase/` para que no se vuelva a ejecutar.
@@ -106,6 +108,7 @@ pestañas del panel.
    11. `campatienda_productos.sql`
    12. `imagenes_sitio.sql`
    13. `textos_editables.sql`
+   14. `recursos_descargables.sql`
 3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
 4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
 5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).
