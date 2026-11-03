@@ -5,7 +5,7 @@
 -- Requiere: secciones_visibilidad.sql y contenido_secciones.sql
 --
 -- Hace editables desde admin.html > "Contenido de secciones" los
--- 123 textos de las páginas (títulos y párrafos) que en el HTML
+-- 121 textos de las páginas (títulos y párrafos) que en el HTML
 -- llevan data-contenido="clave":
 --
 -- 1) Registra cada texto en informacion_general: así aparece en el
@@ -55,9 +55,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('comunidad.html', 'comunidad.somos_familia_texto', 'Somos familia · texto', 1, true),
   ('comunidad.html', 'comunidad.fincas_titulo', 'Fincas · título', 2, true),
   ('comunidad.html', 'comunidad.transporte_titulo', 'Transporte · título', 3, true),
-  ('comunidad.html', 'comunidad.juegos_titulo', 'Juegos con propósito · título', 4, true),
   ('comunidad.html', 'comunidad.cocina_titulo', 'Cocina · título', 5, true),
-  ('comunidad.html', 'comunidad.graficos_titulo', 'Gráficos · título', 6, true),
   ('comunidad.html', 'comunidad.testimonios_titulo', 'Testimonios · título', 7, true),
   ('campatienda.html', 'campatienda.bienvenida_titulo', 'Bienvenida · título', 1, true),
   ('campatienda.html', 'campatienda.bienvenida_texto', 'Bienvenida · texto', 1, true),
@@ -185,9 +183,7 @@ insert into public.contenido_secciones (seccion_clave, contenido) values
   ('comunidad.somos_familia_texto', '<p>Somos una comunidad que se apoya mutuamente. Aquí compartimos experiencias, recomendaciones y recursos que ayudan a mejorar cada campamento.</p><p><br></p><p>Descubre locaciones utilizadas, juegos con propósito que han funcionado y orientaciones prácticas sobre logística como transporte y alimentación. También encontrarás plantillas gráficas y recomendaciones para Estudios Bíblicos en Comunidad (EBC).</p>'),
   ('comunidad.fincas_titulo', '<p><strong>Fincas</strong></p>'),
   ('comunidad.transporte_titulo', '<p><strong>Transporte</strong></p>'),
-  ('comunidad.juegos_titulo', '<p><strong>Juegos con propósito</strong></p>'),
   ('comunidad.cocina_titulo', '<p><strong>Cocina</strong></p>'),
-  ('comunidad.graficos_titulo', '<p><strong>Gráficos</strong></p>'),
   ('comunidad.testimonios_titulo', '<p><strong>Testimonios</strong></p>'),
   ('campatienda.bienvenida_titulo', '<p><strong>Bienvenido a CampaTienda, la tienda oficial de CCI AL/Colombia</strong></p>'),
   ('campatienda.bienvenida_texto', '<p><br></p><p>Aquí encontrarás productos campamentiles y artículos diseñados para acompañarte en tu servicio y en cada experiencia de campamento.</p><p><br></p><p>Descubre una variedad de productos, incluyendo algunas ediciones especiales, pensadas para quienes viven y apoyan el ministerio de campamentos.</p><p><br></p><p>Como miembro, al renovar tu membresía podrás recibir regalos exclusivos como una forma de agradecer tu compromiso y caminar junto a nosotros en este ministerio.</p><p><br></p><p><strong>¿Te interesa algún producto?</strong></p><p><br></p><p><strong>Haz clic en «Pedir» en el producto que quieras o escríbenos a:</strong></p><p><strong><a href="mailto:comunicacionesccialcol@gmail.com?subject=CampaTienda" class="text-primary">comunicacionesccialcol@gmail.com</a></strong></p>'),

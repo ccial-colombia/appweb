@@ -10,18 +10,19 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 | `informacion_general` | todas las paginas, panel | Catalogo de secciones y textos; mostrar u ocultar cada uno |
 | `contenido_secciones` | todas las paginas, panel | Textos editables (`data-contenido`) |
 | `imagenes_sitio` | todas las paginas, panel | Imagenes editables (`data-imagen`) |
-| `fincas`, `transporte`, `juegos`, `cocina`, `graficos`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
+| `fincas`, `transporte`, `cocina`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
 | `cursos`, `talleres` | `exclusivo.html`, panel | Cursos y talleres |
 | `videos` | `equipados.html`, panel | Videos exclusivos |
 | `descargables` | `equipados.html`, panel | Recursos descargables (PDF de ISL y de la Enciclopedia de Juegos) |
 | `productos` | `campatienda.html`, panel | Catalogo de CampaTienda |
+| `anuncios` | `index.html`, panel | Anuncios con fecha de inicio y fin, en el carrusel de bienvenida |
 
-Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
+Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anuncios, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
 
 ## Archivos
 
 - `supabase_setup.sql`: tabla `psw_change` y funcion `validar_password` (acceso de miembros).
-- `supabase_contenido.sql`: tablas de la pagina Comunidad (fincas, transporte, juegos, cocina, graficos, testimonios) con datos de ejemplo.
+- `supabase_contenido.sql`: tablas de la pagina Comunidad (fincas, transporte, cocina, testimonios) con datos de ejemplo.
 - `supabase_backend.sql`: tablas `cursos`, `talleres`, `videos`, `informacion_general` y `contenido_secciones`, y permisos de administracion para usuarios autenticados.
 - `supabase_migracion_fincas.sql` / `supabase_migracion_fotos_testimonios.sql`: columnas `ciudad` y `capacidad` en fincas, foto en testimonios y bucket `testimonios`.
 - `secciones_visibilidad.sql`: agrega a `informacion_general` las columnas `pagina`, `orden` y `visible`, y carga el catalogo de secciones visuales de cada pagina.
@@ -30,8 +31,10 @@ Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, portad
 - `cursos_talleres.sql` / `cursos_talleres_datos.sql`: nueva estructura de `cursos` y `talleres` (imagen, nombre, descripcion corta, descripcion, orden, visible) y carga de los datos actuales.
 - `campatienda_productos.sql`: crea la tabla `productos` (foto, nombre, descripcion, precio, tallas u opciones, disponible, orden, visible) que muestra `campatienda.html` y se administra en el panel, pestaña "CampaTienda". Carga los 7 productos iniciales con sus fotos de `assets/images/campatienda/`. Se puede ejecutar mas de una vez.
 - `imagenes_sitio.sql`: crea la tabla `imagenes_sitio` con las 61 imagenes fijas del sitio (logo, favicon, portadas, galeria, tomos, normas, valores y fondos) para cambiarlas desde el panel, pestaña "Imagenes del sitio". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
-- `textos_editables.sql`: registra los 123 textos de las paginas (titulos y parrafos con `data-contenido`) en `informacion_general` y copia su texto actual a `contenido_secciones`, para editarlos en el panel, pestaña "Contenido de secciones". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `textos_editables.sql`: registra los 121 textos de las paginas (titulos y parrafos con `data-contenido`) en `informacion_general` y copia su texto actual a `contenido_secciones`, para editarlos en el panel, pestaña "Contenido de secciones". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `recursos_descargables.sql`: crea la tabla `descargables` (tipo `isl` o `juegos`, titulo, descripcion, PDF, tamaño, portada opcional, orden, visible) y el bucket `descargables` (solo PDF). `equipados.html` la muestra en "3. Recursos descargables", agrupada por tipo, y se administra en el panel, pestaña "Recursos descargables". Tambien registra la seccion `equipados.descargables` y sus 4 textos editables. Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `anuncios.sql`: crea la tabla `anuncios` (imagen, titulo, enlace opcional, fecha de inicio, fecha de fin, orden, visible). `index.html` muestra los anuncios vigentes en un carrusel, despues de la imagen de bienvenida (`index.portada`); se administran en el panel, pestaña "Anuncios". Las fechas se cuentan en hora de Colombia y la politica de lectura publica solo entrega los anuncios visibles y vigentes. Se puede ejecutar mas de una vez.
+- `eliminar_juegos_graficos.sql`: borra las tablas `juegos` y `graficos` y quita del catalogo las secciones "Juegos con propósito" y "Gráficos" de `comunidad.html` (y sus textos). Solo hace falta en bases creadas antes de quitar esas secciones.
 - `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
 
 El esquema inicial que creaba esas tablas (`migrations/20260623000000_initial_schema.sql` y `seed.sql`) se movio a `not_used/supabase/` para que no se vuelva a ejecutar.
@@ -109,9 +112,10 @@ pestañas del panel.
    12. `imagenes_sitio.sql`
    13. `textos_editables.sql`
    14. `recursos_descargables.sql`
+   15. `anuncios.sql`
 3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
 4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
 5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).
 
 En la base actual (que se creo con el esquema inicial) ejecuta ademas, una vez,
-`limpieza_tablas_sin_uso.sql`.
+`limpieza_tablas_sin_uso.sql` y `eliminar_juegos_graficos.sql`.

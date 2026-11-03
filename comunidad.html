@@ -205,48 +205,6 @@
 		</div>
 	</section>
 
-	<section data-bs-version="5.1" class="features15 cid-v5MhUnTBZV" data-seccion="comunidad.juegos" id="features015-3l">
-
-
-
-
-		<div class="container">
-			<div class="row justify-content-center">
-				<div class="col-12 content-head">
-					<div class="mbr-section-head mb-5">
-						<h4 data-contenido="comunidad.juegos_titulo" class="mbr-section-title mbr-fonts-style align-center mb-0 titulo-cci-al">
-							<strong>Juegos con propósito</strong>
-						</h4>
-
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="py-4" data-seccion="comunidad.juegos" id="seccion-tabla-juegos">
-		<div class="container">
-			<div class="row justify-content-center">
-				<div class="col-12 col-lg-10">
-					<div class="table-responsive">
-						<table class="table table-striped table-hover align-middle">
-							<thead class="table-dark">
-								<tr>
-									<th scope="col">Nombre</th>
-									<th scope="col">Lugar</th>
-									<th scope="col">Contacto</th>
-								</tr>
-							</thead>
-							<tbody id="tbody-juegos">
-								<!-- Se llenará desde la base de datos -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
 	<section data-bs-version="5.1" class="features15 cid-v5Mi44lNv1" data-seccion="comunidad.cocina" id="features015-3m">
 
 
@@ -280,48 +238,6 @@
 								</tr>
 							</thead>
 							<tbody id="tbody-cocina">
-								<!-- Se llenará desde la base de datos -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section data-bs-version="5.1" class="features15 cid-v5MihqJnVj" data-seccion="comunidad.graficos" id="features015-3n">
-
-
-
-
-		<div class="container">
-			<div class="row justify-content-center">
-				<div class="col-12 content-head">
-					<div class="mbr-section-head mb-5">
-						<h4 data-contenido="comunidad.graficos_titulo" class="mbr-section-title mbr-fonts-style align-center mb-0 titulo-cci-al">
-							<strong>Gráficos</strong>
-						</h4>
-
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="py-4" data-seccion="comunidad.graficos" id="seccion-tabla-graficos">
-		<div class="container">
-			<div class="row justify-content-center">
-				<div class="col-12 col-lg-10">
-					<div class="table-responsive">
-						<table class="table table-striped table-hover align-middle">
-							<thead class="table-dark">
-								<tr>
-									<th scope="col">Nombre</th>
-									<th scope="col">Lugar</th>
-									<th scope="col">Contacto</th>
-								</tr>
-							</thead>
-							<tbody id="tbody-graficos">
 								<!-- Se llenará desde la base de datos -->
 							</tbody>
 						</table>
@@ -548,8 +464,7 @@
 
 		// Si no se puede conectar con la base de datos, se avisa en cada bloque.
 		function mostrarErrorConexion() {
-			[["tbody-fincas", 5], ["tbody-transporte", 3], ["tbody-juegos", 3],
-			 ["tbody-cocina", 3], ["tbody-graficos", 3]].forEach(function (par) {
+			[["tbody-fincas", 5], ["tbody-transporte", 3], ["tbody-cocina", 3]].forEach(function (par) {
 				const tbody = document.getElementById(par[0]);
 				if (tbody) tbody.innerHTML = '<tr><td colspan="' + par[1] + '" class="text-center">No se pudo cargar la información.</td></tr>';
 			});
@@ -562,9 +477,7 @@
 				supabaseClient = cliente;
 				cargarFincas();
 				cargarTabla("transporte", "tbody-transporte");
-				cargarTabla("juegos", "tbody-juegos");
 				cargarTabla("cocina", "tbody-cocina");
-				cargarTabla("graficos", "tbody-graficos");
 				cargarTestimonios();
 			})
 			.catch(mostrarErrorConexion);

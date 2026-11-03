@@ -6,9 +6,7 @@
 -- Cada sección de la página lee de su propia tabla:
 --   Fincas               -> public.fincas
 --   Transporte           -> public.transporte
---   Juegos con propósito -> public.juegos
 --   Cocina               -> public.cocina
---   Graficos             -> public.graficos
 --   Testimonios          -> public.testimonios
 --
 -- Para administrar el contenido: Table Editor en el panel de
@@ -36,25 +34,7 @@ create table if not exists public.transporte (
   visible boolean default true
 );
 
-create table if not exists public.juegos (
-  id serial primary key,
-  nombre text not null,
-  lugar text,
-  contacto text,
-  orden int default 0,
-  visible boolean default true
-);
-
 create table if not exists public.cocina (
-  id serial primary key,
-  nombre text not null,
-  lugar text,
-  contacto text,
-  orden int default 0,
-  visible boolean default true
-);
-
-create table if not exists public.graficos (
   id serial primary key,
   nombre text not null,
   lugar text,
@@ -80,16 +60,12 @@ create table if not exists public.testimonios (
 
 alter table public.fincas       enable row level security;
 alter table public.transporte   enable row level security;
-alter table public.juegos       enable row level security;
 alter table public.cocina       enable row level security;
-alter table public.graficos     enable row level security;
 alter table public.testimonios  enable row level security;
 
 create policy "lectura publica" on public.fincas      for select using (true);
 create policy "lectura publica" on public.transporte  for select using (true);
-create policy "lectura publica" on public.juegos      for select using (true);
 create policy "lectura publica" on public.cocina      for select using (true);
-create policy "lectura publica" on public.graficos    for select using (true);
 create policy "lectura publica" on public.testimonios for select using (true);
 
 -- ---------- Datos de ejemplo (reemplázalos con los reales) ----------
@@ -101,14 +77,8 @@ insert into public.fincas (nombre, lugar, contacto, orden) values
 insert into public.transporte (nombre, lugar, contacto, orden) values
   ('Transportes El Camino (ejemplo)', 'Bogotá', '310 000 0000', 1);
 
-insert into public.juegos (nombre, lugar, contacto, orden) values
-  ('Búsqueda del tesoro bíblica (ejemplo)', 'Cualquier locación', 'coordinacion@ejemplo.com', 1);
-
 insert into public.cocina (nombre, lugar, contacto, orden) values
   ('Servicio de alimentación Sabor y Fe (ejemplo)', 'Bogotá', '320 000 0000', 1);
-
-insert into public.graficos (nombre, lugar, contacto, orden) values
-  ('Plantillas EBC 2026 (ejemplo)', 'Google Drive', 'comunicacionesccialcol@gmail.com', 1);
 
 insert into public.testimonios (nombre, rol, mensaje, orden) values
   ('María G. (ejemplo)', 'Líder de campamento', 'El campamento transformó la vida de nuestros jóvenes. La comunidad CCI nos acompañó en cada paso.', 1),

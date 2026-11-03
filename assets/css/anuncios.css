@@ -1,0 +1,77 @@
+/* Carrusel de bienvenida (index.html): imagen de bienvenida + anuncios vigentes.
+   Lo arma assets/js/anuncios.js con los datos de la tabla "anuncios". */
+
+.carrusel-portada {
+  position: relative;
+}
+
+/* Con anuncios, todas las imágenes usan el marco de la imagen de bienvenida (anuncios.js
+   pone su proporción en --proporcion-portada). Las de otro formato se ven completas,
+   sin recortes, con franjas del color de fondo de la sección. */
+.carrusel-portada.con-anuncios .carousel-item img {
+  aspect-ratio: var(--proporcion-portada, 1600 / 753);
+  object-fit: contain;
+}
+
+.carrusel-enlace {
+  display: block;
+  width: 100%;
+}
+
+.carrusel-enlace:focus-visible {
+  outline: 3px solid #05386b;
+  outline-offset: -3px;
+}
+
+/* Flechas y puntos con sombra, para que se vean también sobre imágenes claras. */
+.carrusel-portada .carousel-control-prev-icon,
+.carrusel-portada .carousel-control-next-icon {
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+}
+
+.carrusel-portada .carousel-indicators [data-bs-target] {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Botón para pausar o reanudar el avance automático. */
+.carrusel-pausa {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.carrusel-pausa:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.carrusel-pausa:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.carrusel-pausa svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+@media (max-width: 575px) {
+  .carrusel-pausa {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}

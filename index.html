@@ -34,6 +34,7 @@
   </noscript>
   <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=rAJT5M">
   <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=rAJT5M" type="text/css">
+  <link rel="stylesheet" href="assets/css/anuncios.css">
 
 
 
@@ -73,7 +74,28 @@
     <div class="text-center container">
       <div class="row mb-4 justify-content-center">
         <div class="col-12 col-md-12">
-          <img data-imagen="index.portada" class="w-100" src="assets/images/inicio-1600x753.jpeg" alt="Bienvenido a CCI AL/Colombia">
+          <!-- Carrusel: la imagen de bienvenida siempre es la primera; assets/js/anuncios.js agrega
+               los anuncios vigentes de la tabla "anuncios" (admin.html > Anuncios). Sin anuncios
+               vigentes se ve solo la imagen, sin flechas ni puntos.
+               "mbr-slider" excluye el carrusel de las animaciones de entrada del tema (script.js):
+               sin eso, la imagen de bienvenida se volvería a animar cada vez que el carrusel vuelve a ella. -->
+          <div id="carrusel-portada" class="carousel slide carrusel-portada mbr-slider" aria-roledescription="carrusel" aria-label="Bienvenida y anuncios">
+            <div class="carousel-indicators" hidden></div>
+            <div class="carousel-inner">
+              <div class="carousel-item active">
+                <img data-imagen="index.portada" class="d-block w-100" src="assets/images/inicio-1600x753.jpeg" alt="Bienvenido a CCI AL/Colombia">
+              </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carrusel-portada" data-bs-slide="prev" hidden>
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carrusel-portada" data-bs-slide="next" hidden>
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Siguiente</span>
+            </button>
+            <button class="carrusel-pausa" type="button" aria-label="Pausar el carrusel" hidden></button>
+          </div>
         </div>
       </div>
       <div class="row justify-content-center">
@@ -927,6 +949,7 @@
   <script src="assets/ytplayer/index.js"></script>
   <script src="assets/dropdown/js/navbar-dropdown.js"></script>
   <script src="assets/theme/js/script.js"></script>
+  <script src="assets/js/anuncios.js"></script>
 
   <input name="animation" type="hidden">
 

@@ -26,7 +26,7 @@
 -- Tablas que la aplicación SÍ usa (no se tocan):
 --   psw_change (+ función validar_password), informacion_general,
 --   contenido_secciones, imagenes_sitio, productos, fincas,
---   transporte, juegos, cocina, graficos, testimonios, cursos,
+--   transporte, cocina, testimonios, cursos,
 --   talleres, videos
 -- =============================================================
 

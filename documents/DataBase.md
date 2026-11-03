@@ -9,11 +9,12 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `informacion_general` | todas las páginas, panel | Catálogo de secciones y textos; mostrar u ocultar cada uno |
 | `contenido_secciones` | todas las páginas, panel | Textos editables (`data-contenido`) |
 | `imagenes_sitio` | todas las páginas, panel | Imágenes editables (`data-imagen`) |
-| `fincas`, `transporte`, `juegos`, `cocina`, `graficos`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
+| `fincas`, `transporte`, `cocina`, `testimonios` | `comunidad.html`, `testimonio.html`, panel | Recursos de la comunidad y testimonios |
 | `cursos`, `talleres` | `exclusivo.html`, panel | Cursos y talleres |
 | `videos` | `equipados.html`, panel | Videos exclusivos |
 | `descargables` | `equipados.html`, panel | Recursos descargables (PDF) |
 | `productos` | `campatienda.html`, panel | Catálogo de CampaTienda |
+| `anuncios` | `index.html`, panel | Anuncios del carrusel de bienvenida (con fechas) |
 
 ## Table `psw_change`
 
@@ -53,33 +54,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `orden` | `int4` |  Nullable |
 | `visible` | `bool` |  Nullable |
 
-## Table `juegos`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `int4` | Primary |
-| `nombre` | `text` |  |
-| `lugar` | `text` |  Nullable |
-| `contacto` | `text` |  Nullable |
-| `orden` | `int4` |  Nullable |
-| `visible` | `bool` |  Nullable |
-
 ## Table `cocina`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `int4` | Primary |
-| `nombre` | `text` |  |
-| `lugar` | `text` |  Nullable |
-| `contacto` | `text` |  Nullable |
-| `orden` | `int4` |  Nullable |
-| `visible` | `bool` |  Nullable |
-
-## Table `graficos`
 
 ### Columns
 
@@ -204,6 +179,21 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `orden` | `int4` |  |
 | `visible` | `bool` |  |
 
+## Table `anuncios`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int4` | Primary |
+| `imagen_url` | `text` |  |
+| `titulo` | `text` |  |
+| `enlace` | `text` |  Nullable |
+| `fecha_inicio` | `date` |  Default: hoy (hora de Colombia) |
+| `fecha_fin` | `date` |  Check (`fecha_fin >= fecha_inicio`) |
+| `orden` | `int4` |  |
+| `visible` | `bool` |  |
+
 ## Table `imagenes_sitio`
 
 ### Columns
@@ -240,21 +230,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
 | `lectura publica` | SELECT | public | PERMISSIVE | `true` | — |
 
-### `juegos`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
-| `lectura publica` | SELECT | public | PERMISSIVE | `true` | — |
-
 ### `cocina`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
-| `lectura publica` | SELECT | public | PERMISSIVE | `true` | — |
-
-### `graficos`
 
 | Policy | Command | Roles | Action | USING | WITH CHECK |
 |--------|---------|-------|--------|-------|------------|
@@ -316,6 +292,13 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 |--------|---------|-------|--------|-------|------------|
 | `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
 | `lectura publica` | SELECT | public | PERMISSIVE | `(visible = true)` | — |
+
+### `anuncios`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
+| `lectura publica` | SELECT | public | PERMISSIVE | `visible = true and (now() at time zone 'America/Bogota')::date between fecha_inicio and fecha_fin` | — |
 
 ### `imagenes_sitio`
 

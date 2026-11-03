@@ -238,9 +238,7 @@
         const TABLAS = {
             fincas: { titulo: "Fincas", pk: "id", campos: CAMPOS_FINCAS },
             transporte: { titulo: "Transporte", pk: "id", campos: CAMPOS_RECURSO },
-            juegos: { titulo: "Juegos con propósito", pk: "id", campos: CAMPOS_RECURSO },
             cocina: { titulo: "Cocina", pk: "id", campos: CAMPOS_RECURSO },
-            graficos: { titulo: "Gráficos", pk: "id", campos: CAMPOS_RECURSO },
             testimonios: {
                 titulo: "Testimonios", pk: "id", campos: [
                     { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
@@ -298,6 +296,37 @@
                       ayuda: "Si lo desactivas, el producto se muestra como \"Agotado\"." },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
                     { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+                ]
+            },
+            // Anuncios del carrusel de index.html (ver supabase/anuncios.sql): se muestran desde
+            // fecha_inicio hasta fecha_fin, en hora de Colombia. Imágenes en el bucket "contenido", carpeta anuncios/.
+            anuncios: {
+                titulo: "Anuncios", pk: "id",
+                validar: function (valorDe) {
+                    const inicio = valorDe("fecha_inicio"), fin = valorDe("fecha_fin"), enlace = valorDe("enlace");
+                    if (inicio && fin && fin < inicio) return "La fecha final no puede ser anterior a la fecha de inicio.";
+                    if (enlace && !/^(https?:\/\/|mailto:)/i.test(enlace)) {
+                        return 'El enlace debe empezar con "https://" (o "mailto:" si es un correo).';
+                    }
+                    return "";
+                },
+                campos: [
+                    { campo: "imagen_url", etiqueta: "Imagen", tipo: "image", bucket: "contenido", forma: "rectangular", requerido: true,
+                      ayuda: "Ideal: 1600 × 753 px, el mismo formato de la imagen de bienvenida. En otro formato se ve completa, con franjas a los lados." },
+                    { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true,
+                      ayuda: "Describe el anuncio. No se muestra sobre la imagen: es el texto que leen los lectores de pantalla." },
+                    { campo: "enlace", etiqueta: "Enlace", tipo: "text", ocultarEnTabla: true,
+                      ayuda: "Opcional. Al hacer clic en el anuncio se abre este enlace en una pestaña nueva (ej: un formulario de inscripción)." },
+                    { campo: "fecha_inicio", etiqueta: "Desde", tipo: "date", requerido: true, porDefecto: hoyEnColombia,
+                      ayuda: "Primer día en que se muestra." },
+                    { campo: "fecha_fin", etiqueta: "Hasta", tipo: "date", requerido: true,
+                      ayuda: "Último día en que se muestra (se muestra todo ese día, hora de Colombia)." },
+                    { campo: "estado", etiqueta: "Estado", tipo: "estado", estado: estadoAnuncio },
+                    { campo: "orden", etiqueta: "Orden", tipo: "number",
+                      ayuda: "Orden en el carrusel, después de la imagen de bienvenida (menor primero)." },
+                    // En la tabla, "Estado" ya dice "Oculto" cuando no es visible.
+                    { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox", ocultarEnTabla: true,
+                      ayuda: "Si lo desactivas, el anuncio no se muestra aunque esté en fechas." }
                 ]
             },
             // Imágenes fijas de las páginas (data-imagen en el HTML; ver supabase/imagenes_sitio.sql).
@@ -392,6 +421,30 @@
             const div = document.createElement("div");
             div.textContent = texto == null ? "" : String(texto);
             return div.innerHTML;
+        }
+
+        // Fecha de hoy en Colombia (AAAA-MM-DD), la misma con la que la base decide qué anuncios mostrar.
+        function hoyEnColombia() {
+            return new Intl.DateTimeFormat("en-CA", {
+                timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit"
+            }).format(new Date());
+        }
+
+        // "2026-11-03" -> "3 nov 2026". Otros formatos se muestran tal cual.
+        function formatoFecha(valor) {
+            const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(valor || ""));
+            if (!partes) return valor;
+            return new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]))
+                .toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+        }
+
+        // Si un anuncio se está mostrando hoy en index.html.
+        function estadoAnuncio(fila) {
+            const hoy = hoyEnColombia();
+            if (!fila.visible) return { texto: "Oculto", color: "warning" };
+            if (fila.fecha_inicio && hoy < fila.fecha_inicio) return { texto: "Programado", color: "info" };
+            if (fila.fecha_fin && hoy > fila.fecha_fin) return { texto: "Vencido", color: "secondary" };
+            return { texto: "Se muestra hoy", color: "success" };
         }
 
         // Texto visible de una opción de un "select" (las opciones pueden ser { valor, texto }).
@@ -558,21 +611,33 @@
                 return filtroActivo === "*" || valorFiltro(fila) === filtroActivo;
             });
 
+            // Campos con ocultarEnTabla solo aparecen en el formulario (para que la tabla quepa).
+            const columnas = def.campos.filter(function (c) { return !c.ocultarEnTabla; });
+
             document.getElementById("thead-datos").innerHTML = "<tr>" +
-                def.campos.map(function (c) { return "<th>" + escaparHtml(c.etiqueta) + "</th>"; }).join("") +
+                columnas.map(function (c) { return "<th>" + escaparHtml(c.etiqueta) + "</th>"; }).join("") +
                 '<th class="text-end">Acciones</th></tr>';
 
             const tbody = document.getElementById("tbody-datos");
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="' + (def.campos.length + 1) +
+                tbody.innerHTML = '<tr><td colspan="' + (columnas.length + 1) +
                     '" class="text-center text-muted py-4">No hay registros.' +
                     (def.soloEditar ? "" : ' Usa "+ Agregar".') + "</td></tr>";
                 return;
             }
 
             tbody.innerHTML = data.map(function (fila) {
-                const celdas = def.campos.map(function (c) {
+                const celdas = columnas.map(function (c) {
                     const valor = fila[c.campo];
+                    // Columna calculada (no es un campo de la tabla): una etiqueta de color.
+                    if (c.tipo === "estado") {
+                        const estado = c.estado(fila);
+                        return '<td class="text-nowrap"><span class="badge text-bg-' + estado.color + '">' +
+                            escaparHtml(estado.texto) + "</span></td>";
+                    }
+                    if (c.tipo === "date" && !vacio(valor)) {
+                        return '<td class="text-nowrap">' + escaparHtml(formatoFecha(valor)) + "</td>";
+                    }
                     if (c.tipo === "checkbox") {
                         return '<td><span class="badge bg-' + (valor ? "success" : "secondary") + '">' +
                             (valor ? "Sí" : "No") + "</span></td>";
@@ -646,7 +711,11 @@
             }
 
             document.getElementById("modal-campos").innerHTML = def.campos.map(function (c) {
-                const valor = filaEditando ? filaEditando[c.campo] : (c.campo === "orden" && siguienteOrden != null ? siguienteOrden : null);
+                if (c.tipo === "estado") return ""; // solo se ve en la tabla
+                let valor = null;
+                if (filaEditando) valor = filaEditando[c.campo];
+                else if (c.campo === "orden" && siguienteOrden != null) valor = siguienteOrden;
+                else if (c.porDefecto) valor = c.porDefecto();
                 // Texto de ayuda opcional debajo del campo.
                 const ayuda = c.ayuda ? '<div class="form-text">' + escaparHtml(c.ayuda) + "</div>" : "";
                 if (c.tipo === "checkbox") {
@@ -677,7 +746,7 @@
                                   : 'style="max-height:120px;border-radius:8px;display:block;"') + "></div>"
                             : "") +
                         '<input class="form-control" type="file" accept="image/*" id="campo-' + c.campo + '">' +
-                        (valor
+                        (valor && !c.requerido
                             ? '<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="campo-' + c.campo + '-quitar">' +
                               '<label class="form-check-label" for="campo-' + c.campo + '-quitar">Quitar foto actual</label></div>'
                             : "") +
@@ -843,8 +912,21 @@
             const registro = {};
             const errorModal = document.getElementById("modal-error");
 
+            // Validación propia de la tabla (ej: fechas de los anuncios), antes de subir archivos.
+            if (def.validar) {
+                const mensaje = def.validar(function (campo) {
+                    const control = document.getElementById("campo-" + campo);
+                    return control ? control.value.trim() : "";
+                });
+                if (mensaje) {
+                    errorModal.textContent = mensaje;
+                    errorModal.style.display = "inline";
+                    return;
+                }
+            }
+
             for (const c of def.campos) {
-                if (c.soloLectura) continue; // no se envía: no cambia
+                if (c.soloLectura || c.tipo === "estado") continue; // no se envía: no cambia o no es un campo
 
                 if (c.tipo === "image") {
                     const inputArchivo = document.getElementById("campo-" + c.campo);
@@ -869,6 +951,11 @@
                         registro[c.campo] = filaEditando[c.campo];
                     } else {
                         registro[c.campo] = null;
+                    }
+                    if (c.requerido && vacio(registro[c.campo])) {
+                        errorModal.textContent = 'El campo "' + c.etiqueta + '" es obligatorio.';
+                        errorModal.style.display = "inline";
+                        return;
                     }
                     continue;
                 }

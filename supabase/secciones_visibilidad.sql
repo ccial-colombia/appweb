@@ -42,9 +42,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('comunidad.html', 'comunidad.somos_familia', 'Somos familia', 1, true),
   ('comunidad.html', 'comunidad.fincas', 'Fincas', 2, true),
   ('comunidad.html', 'comunidad.transporte', 'Transporte', 3, true),
-  ('comunidad.html', 'comunidad.juegos', 'Juegos con propósito', 4, true),
   ('comunidad.html', 'comunidad.cocina', 'Cocina', 5, true),
-  ('comunidad.html', 'comunidad.graficos', 'Gráficos', 6, true),
   ('comunidad.html', 'comunidad.testimonios', 'Testimonios', 7, true),
 
   ('equipados.html', 'equipados.imagen', 'Imagen de portada', 1, true),

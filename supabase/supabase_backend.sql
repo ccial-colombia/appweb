@@ -92,9 +92,7 @@ create policy "lectura publica" on public.contenido_secciones for select using (
 
 create policy "admin total" on public.fincas              for all to authenticated using (true) with check (true);
 create policy "admin total" on public.transporte          for all to authenticated using (true) with check (true);
-create policy "admin total" on public.juegos              for all to authenticated using (true) with check (true);
 create policy "admin total" on public.cocina              for all to authenticated using (true) with check (true);
-create policy "admin total" on public.graficos            for all to authenticated using (true) with check (true);
 create policy "admin total" on public.testimonios         for all to authenticated using (true) with check (true);
 create policy "admin total" on public.cursos              for all to authenticated using (true) with check (true);
 create policy "admin total" on public.talleres            for all to authenticated using (true) with check (true);
