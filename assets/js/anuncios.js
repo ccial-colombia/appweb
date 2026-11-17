@@ -1,6 +1,9 @@
-// Carrusel de bienvenida (index.html): a la imagen de bienvenida (index.portada) le suma
-// los anuncios vigentes de la tabla "anuncios" de Supabase. Se administran desde
-// admin.html, en la pestaña "Anuncios". Sin anuncios vigentes queda solo la imagen.
+// Carruseles con los anuncios vigentes de la tabla "anuncios" de Supabase. Se administran
+// desde admin.html, en la pestaña "Anuncios". Cada carrusel lleva data-anuncios:
+//   data-anuncios="portada" (index.html): a la imagen de bienvenida (index.portada), que es
+//       la primera, le suma los anuncios. Sin anuncios vigentes queda solo la imagen.
+//   data-anuncios="solo" (inicio.html, sección "Anuncios" al final): solo los anuncios.
+//       Sin anuncios vigentes la sección no se muestra.
 // Requiere assets/js/secciones.js (obtenerClienteSupabase) y Bootstrap (carrusel).
 (function () {
     "use strict";
@@ -29,9 +32,9 @@
         return /^(https?:\/\/|mailto:)/i.test(String(url || "").trim());
     }
 
-    function diapositiva(anuncio) {
+    function diapositiva(anuncio, activa) {
         var item = document.createElement("div");
-        item.className = "carousel-item";
+        item.className = "carousel-item" + (activa ? " active" : "");
 
         var img = document.createElement("img");
         img.className = "d-block w-100";
@@ -54,10 +57,10 @@
         return item;
     }
 
-    function indicador(indice, etiqueta) {
+    function indicador(carrusel, indice, etiqueta) {
         var boton = document.createElement("button");
         boton.type = "button";
-        boton.setAttribute("data-bs-target", "#carrusel-portada");
+        boton.setAttribute("data-bs-target", "#" + carrusel.id);
         boton.setAttribute("data-bs-slide-to", String(indice));
         boton.setAttribute("aria-label", etiqueta);
         if (indice === 0) {
@@ -69,6 +72,7 @@
 
     // Todas las imágenes usan el marco de la imagen de bienvenida (aunque se cambie
     // desde el panel): así el carrusel no cambia de alto al pasar de una a otra.
+    // Sin imagen de bienvenida (inicio.html) se usa el formato recomendado, 1600 × 753.
     function igualarProporcion(carrusel, portada) {
         function aplicar() {
             if (portada.naturalWidth && portada.naturalHeight) {
@@ -79,24 +83,32 @@
         if (portada.complete) aplicar();
     }
 
-    function activarCarrusel(carrusel, anuncios) {
+    // Etiqueta de cada diapositiva para los lectores de pantalla y los puntos.
+    function etiquetaDiapositiva(conPortada, anuncios, i) {
+        if (conPortada && i === 0) return "Imagen de bienvenida";
+        var n = conPortada ? i : i + 1;
+        return "Anuncio " + n + ": " + (anuncios[n - 1].titulo || "");
+    }
+
+    // Con una sola imagen no hay flechas, puntos ni avance automático.
+    function activarCarrusel(carrusel, anuncios, conPortada) {
         var items = carrusel.querySelectorAll(".carousel-item");
         var indicadores = carrusel.querySelector(".carousel-indicators");
+
+        carrusel.classList.add("con-anuncios");
+        if (conPortada) igualarProporcion(carrusel, items[0].querySelector("img"));
+        if (items.length < 2) return;
 
         Array.prototype.forEach.call(items, function (item, i) {
             item.setAttribute("role", "group");
             item.setAttribute("aria-roledescription", "diapositiva");
             item.setAttribute("aria-label", (i + 1) + " de " + items.length);
-            indicadores.appendChild(indicador(i, i === 0
-                ? "Imagen de bienvenida"
-                : "Anuncio " + i + ": " + (anuncios[i - 1].titulo || "")));
+            indicadores.appendChild(indicador(carrusel, i, etiquetaDiapositiva(conPortada, anuncios, i)));
         });
         indicadores.hidden = false;
         Array.prototype.forEach.call(carrusel.querySelectorAll(".carousel-control-prev, .carousel-control-next"), function (b) {
             b.hidden = false;
         });
-        carrusel.classList.add("con-anuncios");
-        igualarProporcion(carrusel, items[0].querySelector("img"));
 
         // El avance automático lo maneja este script (pause: false): se detiene con el
         // botón de pausa, mientras el mouse o el foco están sobre el carrusel, y no
@@ -141,10 +153,31 @@
         actualizarAvance();
     }
 
-    async function cargarAnuncios() {
-        var carrusel = document.getElementById("carrusel-portada");
-        if (!carrusel || !window.bootstrap || !window.bootstrap.Carousel) return;
+    // Pone los anuncios en un carrusel. Devuelve false si no hay nada que mostrar.
+    function llenarCarrusel(carrusel, anuncios) {
+        var conPortada = carrusel.getAttribute("data-anuncios") !== "solo";
+        if (anuncios.length === 0) return false;
 
+        var interior = carrusel.querySelector(".carousel-inner");
+        anuncios.forEach(function (anuncio, i) {
+            interior.appendChild(diapositiva(anuncio, !conPortada && i === 0));
+        });
+        activarCarrusel(carrusel, anuncios, conPortada);
+        return true;
+    }
+
+    // Carruseles "solo" (sin imagen de bienvenida): la sección que los contiene se muestra
+    // únicamente si hay anuncios.
+    function mostrarSeccion(carrusel) {
+        var seccion = carrusel.closest("[data-anuncios-seccion]");
+        if (seccion) seccion.hidden = false;
+    }
+
+    async function cargarAnuncios() {
+        var carruseles = document.querySelectorAll("[data-anuncios]");
+        if (carruseles.length === 0 || !window.bootstrap || !window.bootstrap.Carousel) return;
+
+        var anuncios = [];
         try {
             var cliente = await window.obtenerClienteSupabase();
             var hoy = hoyEnColombia();
@@ -159,17 +192,19 @@
                 .order("orden", { ascending: true })
                 .order("id", { ascending: true });
             if (respuesta.error) throw respuesta.error;
-
-            var anuncios = (respuesta.data || []).filter(function (a) { return a.imagen_url; });
-            if (anuncios.length === 0) return; // queda solo la imagen de bienvenida
-
-            var interior = carrusel.querySelector(".carousel-inner");
-            anuncios.forEach(function (anuncio) { interior.appendChild(diapositiva(anuncio)); });
-            activarCarrusel(carrusel, anuncios);
+            anuncios = (respuesta.data || []).filter(function (a) { return a.imagen_url; });
         } catch (error) {
-            // Sin anuncios la página se ve igual que siempre: solo la imagen de bienvenida.
+            // Sin anuncios: index.html muestra solo la imagen de bienvenida y
+            // la sección de anuncios de inicio.html queda oculta.
             console.error("Anuncios: no se pudieron cargar.", error);
+            return;
         }
+
+        Array.prototype.forEach.call(carruseles, function (carrusel) {
+            if (llenarCarrusel(carrusel, anuncios) && carrusel.getAttribute("data-anuncios") === "solo") {
+                mostrarSeccion(carrusel);
+            }
+        });
     }
 
     if (document.readyState === "loading") {

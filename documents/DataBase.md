@@ -14,7 +14,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `videos` | `equipados.html`, panel | Videos exclusivos |
 | `descargables` | `equipados.html`, panel | Recursos descargables (PDF) |
 | `productos` | `campatienda.html`, panel | Catálogo de CampaTienda |
-| `anuncios` | `index.html`, panel | Anuncios del carrusel de bienvenida (con fechas) |
+| `anuncios` | `index.html`, `inicio.html`, panel | Anuncios del carrusel de bienvenida y de la sección "Anuncios" de Inicio (con fechas) |
 | `articulos` | `elpunto.html`, `articulo.html`, panel | Artículos de la revista virtual El Punto |
 | `menu` | páginas con menú superior, panel | Opciones del menú superior (texto, enlace, orden) |
 

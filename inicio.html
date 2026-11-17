@@ -32,9 +32,10 @@
     <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,700;1,400;1,700&display=swap&display=swap">
   </noscript>
-  <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=ep1116">
-  <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=ep1116" type="text/css">
+  <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=an1116">
+  <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=an1116" type="text/css">
   <link rel="stylesheet" href="assets/css/contenido.css">
+  <link rel="stylesheet" href="assets/css/anuncios.css">
 
 
 
@@ -276,6 +277,29 @@
     </div>
   </section>
 
+  <!-- Anuncios: los mismos del carrusel de index.html, pero sin la imagen de bienvenida
+       (data-anuncios="solo"). assets/js/anuncios.js pone los anuncios vigentes de la tabla
+       "anuncios" (admin.html > Anuncios) y muestra la sección solo si hay alguno.
+       "mbr-slider" excluye el carrusel de las animaciones de entrada del tema (script.js). -->
+  <section class="anuncios-seccion" data-seccion="inicio.anuncios" data-anuncios-seccion id="anuncios" hidden>
+    <div class="container">
+      <h2 data-contenido="inicio.anuncios_titulo" class="anuncios-titulo"><strong>Anuncios</strong></h2>
+      <div id="carrusel-anuncios" class="carousel slide carrusel-portada mbr-slider" data-anuncios="solo" aria-roledescription="carrusel" aria-label="Anuncios">
+        <div class="carousel-indicators" hidden></div>
+        <div class="carousel-inner"></div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carrusel-anuncios" data-bs-slide="prev" hidden>
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carrusel-anuncios" data-bs-slide="next" hidden>
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+        <button class="carrusel-pausa" type="button" aria-label="Pausar el carrusel" hidden></button>
+      </div>
+    </div>
+  </section>
+
   <section data-bs-version="5.1" class="footer2 cid-v5yCanq2fr" once="footers" id="footer02-2s">
 
 
@@ -319,6 +343,7 @@
   <script src="assets/ytplayer/index.js"></script>
   <script src="assets/dropdown/js/navbar-dropdown.js"></script>
   <script src="assets/theme/js/script.js"></script>
+  <script src="assets/js/anuncios.js"></script>
 
 
   <input name="animation" type="hidden">

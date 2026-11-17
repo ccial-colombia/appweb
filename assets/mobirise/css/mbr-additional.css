@@ -7383,9 +7383,10 @@ a {
   }
 }
 /* Menú superior con 7 opciones (se agregó El Punto): un poco menos de espacio entre
-   opciones para que quepan en una sola fila (antes: margin 0.667em 1em). */
+   opciones para que quepan en una sola fila (antes: margin 0.667em 1em). Aplica a todo
+   menú con data-menu (las páginas usan distintas clases cid-: inicio.html tiene la suya). */
 @media (min-width: 992px) {
-  .cid-sFAA5oUu2Y .nav-dropdown .link {
+  .menu3 .nav-dropdown[data-menu] .link {
     margin: 0.667em 0.75em !important;
   }
 }

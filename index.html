@@ -74,12 +74,12 @@
     <div class="text-center container">
       <div class="row mb-4 justify-content-center">
         <div class="col-12 col-md-12">
-          <!-- Carrusel: la imagen de bienvenida siempre es la primera; assets/js/anuncios.js agrega
+          <!-- Carrusel (data-anuncios="portada"): la imagen de bienvenida siempre es la primera; assets/js/anuncios.js agrega
                los anuncios vigentes de la tabla "anuncios" (admin.html > Anuncios). Sin anuncios
                vigentes se ve solo la imagen, sin flechas ni puntos.
                "mbr-slider" excluye el carrusel de las animaciones de entrada del tema (script.js):
                sin eso, la imagen de bienvenida se volvería a animar cada vez que el carrusel vuelve a ella. -->
-          <div id="carrusel-portada" class="carousel slide carrusel-portada mbr-slider" aria-roledescription="carrusel" aria-label="Bienvenida y anuncios">
+          <div id="carrusel-portada" class="carousel slide carrusel-portada mbr-slider" data-anuncios="portada" aria-roledescription="carrusel" aria-label="Bienvenida y anuncios">
             <div class="carousel-indicators" hidden></div>
             <div class="carousel-inner">
               <div class="carousel-item active">

@@ -1,12 +1,15 @@
 -- =============================================================
--- Anuncios del carrusel de bienvenida (index.html)
+-- Anuncios (index.html e inicio.html)
 -- Ejecutar en: Supabase Dashboard > SQL Editor > New query
 -- Proyecto: gmcuzmsckwtdvurboobh
+-- Requiere: secciones_visibilidad.sql y contenido_secciones.sql
 --
 -- Crea la tabla public.anuncios. index.html muestra los anuncios
 -- vigentes en un carrusel junto con la imagen de bienvenida
--- (index.portada), que siempre es la primera. Se administran desde
--- admin.html, en la pestaña "Anuncios".
+-- (index.portada), que siempre es la primera. inicio.html los muestra
+-- en la sección "Anuncios", al final de la página, sin la imagen de
+-- bienvenida (si no hay anuncios vigentes, la sección no aparece).
+-- Se administran desde admin.html, en la pestaña "Anuncios".
 --
 --   imagen_url   -> imagen del anuncio (bucket "contenido", carpeta
 --                   anuncios/). Conviene el mismo formato que la imagen
@@ -17,7 +20,7 @@
 --                   enlace en una pestaña nueva (https://... o mailto:...)
 --   fecha_inicio -> primer día en que se muestra (desde las 00:00)
 --   fecha_fin    -> último día en que se muestra (hasta las 23:59)
---   orden        -> orden en el carrusel (menor primero)
+--   orden        -> orden en los carruseles (menor primero)
 --   visible      -> false = no se muestra aunque esté en fechas
 --
 -- Las fechas se cuentan en hora de Colombia (America/Bogota). La propia
@@ -25,7 +28,8 @@
 -- anuncio vencido o futuro no llega al navegador, sin importar el reloj
 -- del visitante.
 --
--- Se puede ejecutar más de una vez: no duplica la tabla ni las políticas.
+-- Se puede ejecutar más de una vez: no duplica la tabla, las políticas
+-- ni los textos, y no pisa lo que se haya editado en el panel.
 -- =============================================================
 
 create table if not exists public.anuncios (
@@ -76,3 +80,20 @@ create policy "contenido admin total"
   to authenticated
   using (bucket_id = 'contenido')
   with check (bucket_id = 'contenido');
+
+-- ---------- Sección "Anuncios" de inicio.html ----------
+-- La sección se puede ocultar desde "Secciones de la web" y su título se
+-- edita en "Contenido de secciones". Si la clave ya existe solo se
+-- actualizan página, título y orden (se respeta "visible").
+
+insert into public.informacion_general (pagina, clave, titulo, orden, visible) values
+  ('inicio.html', 'inicio.anuncios', 'Anuncios', 5, true),
+  ('inicio.html', 'inicio.anuncios_titulo', 'Anuncios · título', 5, true)
+on conflict (clave) do update set
+  pagina = excluded.pagina,
+  titulo = excluded.titulo,
+  orden  = excluded.orden;
+
+insert into public.contenido_secciones (seccion_clave, contenido) values
+  ('inicio.anuncios_titulo', '<p><strong>Anuncios</strong></p>')
+on conflict (seccion_clave) do nothing;

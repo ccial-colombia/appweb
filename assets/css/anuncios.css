@@ -1,12 +1,15 @@
-/* Carrusel de bienvenida (index.html): imagen de bienvenida + anuncios vigentes.
-   Lo arma assets/js/anuncios.js con los datos de la tabla "anuncios". */
+/* Carruseles de anuncios vigentes, que arma assets/js/anuncios.js con los datos de la
+   tabla "anuncios":
+     index.html  -> carrusel de bienvenida: imagen de bienvenida + anuncios
+     inicio.html -> sección "Anuncios" al final: solo los anuncios */
 
 .carrusel-portada {
   position: relative;
 }
 
 /* Con anuncios, todas las imágenes usan el marco de la imagen de bienvenida (anuncios.js
-   pone su proporción en --proporcion-portada). Las de otro formato se ven completas,
+   pone su proporción en --proporcion-portada; en inicio.html, sin imagen de bienvenida,
+   queda el formato recomendado 1600 × 753). Las de otro formato se ven completas,
    sin recortes, con franjas del color de fondo de la sección. */
 .carrusel-portada.con-anuncios .carousel-item img {
   aspect-ratio: var(--proporcion-portada, 1600 / 753);
@@ -73,5 +76,27 @@
     bottom: 0.5rem;
     width: 2rem;
     height: 2rem;
+  }
+}
+
+/* ---------- Sección "Anuncios" de inicio.html ---------- */
+
+.anuncios-seccion {
+  padding: 2rem 0 3rem;
+  background-color: #ffffff;
+}
+
+.anuncios-titulo {
+  font-family: 'Jost', sans-serif;
+  font-size: 2.2rem;
+  line-height: 1.3;
+  color: #045e5c;
+  text-align: center;
+  margin: 0 0 1.5rem;
+}
+
+@media (max-width: 575px) {
+  .anuncios-titulo {
+    font-size: 1.8rem;
   }
 }
