@@ -16,6 +16,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `productos` | `campatienda.html`, panel | Catálogo de CampaTienda |
 | `anuncios` | `index.html`, panel | Anuncios del carrusel de bienvenida (con fechas) |
 | `articulos` | `elpunto.html`, `articulo.html`, panel | Artículos de la revista virtual El Punto |
+| `menu` | páginas con menú superior, panel | Opciones del menú superior (texto, enlace, orden) |
 
 ## Table `psw_change`
 
@@ -212,6 +213,21 @@ Sin columna `orden`: se ordena por `fecha_ingreso` (del más nuevo al más viejo
 | `fecha_ingreso` | `date` |  Default: hoy (hora de Colombia) |
 | `visible` | `bool` |  |
 
+## Table `menu`
+
+`secciones.js` arma el menú superior con las filas visibles, ordenadas por `orden` y luego `id`.
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int4` | Primary |
+| `etiqueta` | `text` |  |
+| `enlace` | `text` |  |
+| `nueva_pestana` | `bool` |  Default: false |
+| `orden` | `int4` |  |
+| `visible` | `bool` |  |
+
 ## Table `imagenes_sitio`
 
 ### Columns
@@ -319,6 +335,13 @@ Sin columna `orden`: se ordena por `fecha_ingreso` (del más nuevo al más viejo
 | `lectura publica` | SELECT | public | PERMISSIVE | `visible = true and (now() at time zone 'America/Bogota')::date between fecha_inicio and fecha_fin` | — |
 
 ### `articulos`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
+| `lectura publica` | SELECT | public | PERMISSIVE | `visible = true` | — |
+
+### `menu`
 
 | Policy | Command | Roles | Action | USING | WITH CHECK |
 |--------|---------|-------|--------|-------|------------|

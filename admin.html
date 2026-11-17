@@ -360,8 +360,35 @@
                       ayuda: "Describe la imagen para quienes usan lectores de pantalla. Si lo dejas vacío se usa el texto original." }
                 ]
             },
+            // Menú superior de las páginas (<ul data-menu> en el HTML; ver supabase/menu.sql).
+            // secciones.js lo arma con las opciones visibles, en este orden.
+            menu: {
+                titulo: "Menú", pk: "id", reordenar: true,
+                validar: function (valorDe) {
+                    const enlace = valorDe("enlace");
+                    if (enlace && !enlaceMenuValido(enlace)) {
+                        return 'El enlace debe ser una página del sitio (ej: "elpunto.html") o una dirección que empiece con "https://".';
+                    }
+                    return "";
+                },
+                campos: [
+                    { campo: "etiqueta", etiqueta: "Texto en el menú", tipo: "text", requerido: true },
+                    { campo: "enlace", etiqueta: "Enlace", tipo: "text", requerido: true,
+                      sugerencias: PAGINAS.filter(function (p) { return p !== "index.html"; }),
+                      ayuda: "Una página del sitio (ej: elpunto.html; al escribir aparecen las páginas) o una dirección completa (https://...)." },
+                    { campo: "nueva_pestana", etiqueta: "Abrir en una pestaña nueva", tipo: "checkbox", marcadoPorDefecto: false,
+                      ayuda: "Para enlaces a otros sitios (ej: ccial.org)." },
+                    { campo: "orden", etiqueta: "Orden", tipo: "number",
+                      ayuda: "Posición en el menú (menor primero). En la lista también puedes usar las flechas ↑ ↓." },
+                    { campo: "visible", etiqueta: "Visible en el menú", tipo: "checkbox",
+                      ayuda: "Si lo desactivas, la opción no aparece en el menú (la página sigue existiendo). Con más de 7 opciones el menú puede ocupar dos filas." }
+                ]
+            },
             informacion_general: {
-                titulo: "Secciones de la web", pk: "id", campos: [
+                titulo: "Secciones de la web", pk: "id",
+                mensajeRepetido: 'Ya existe una sección con esa clave. Búscala en la lista y usa "Editar".',
+                avisoEliminar: 'Si la sección tiene un texto en "Contenido de secciones", también se elimina.',
+                campos: [
                     { campo: "pagina", etiqueta: "Página", tipo: "select", opciones: PAGINAS, placeholder: "— Sin página —" },
                     { campo: "titulo", etiqueta: "Sección", tipo: "text" },
                     { campo: "clave", etiqueta: "Clave (identificador único)", tipo: "text", requerido: true },
@@ -371,15 +398,19 @@
             },
             // Textos de las páginas (data-contenido en el HTML; ver supabase/textos_editables.sql).
             // La página de cada fila sale de su sección, para filtrar y ordenar.
+            // Un solo texto por sección (claveUnica): al agregar, si la sección elegida ya tiene
+            // texto, el formulario pasa a editar ese texto en vez de fallar al guardar.
             contenido_secciones: {
-                titulo: "Contenido de secciones", pk: "id",
+                titulo: "Contenido de secciones", pk: "id", claveUnica: "seccion_clave",
+                mensajeRepetido: 'Esa sección ya tiene texto. Búscala en la lista y usa "Editar".',
                 paginaDeFila: function (fila) { return seccionPorClave(fila.seccion_clave).pagina; },
                 textoSinPagina: "Global (todas las páginas)",
                 ordenarFilas: function (a, b) {
                     return posicionSeccion(a.seccion_clave) - posicionSeccion(b.seccion_clave);
                 },
                 campos: [
-                    { campo: "seccion_clave", etiqueta: "Sección", tipo: "select", opcionesDinamicas: "secciones", placeholder: "— Elegir sección —", requerido: true },
+                    { campo: "seccion_clave", etiqueta: "Sección", tipo: "select", opcionesDinamicas: "secciones", placeholder: "— Elegir sección —", requerido: true,
+                      ayuda: "Solo aparecen las secciones que tienen un texto editable en la página. Si eliges una que ya tiene texto, se abre ese texto para modificarlo." },
                     { campo: "contenido", etiqueta: "Contenido", tipo: "richtext",
                       ayuda: "Cada línea del editor es una línea en la página. Los títulos y párrafos mantienen el tamaño y color de la página: usa negrita, cursiva, subrayado o enlaces para resaltar. Si dejas el texto vacío, la página muestra el texto original." }
                 ]
@@ -428,6 +459,46 @@
             return (s.pagina ? s.pagina + " · " : "") + (s.titulo || s.clave);
         }
 
+        // Claves con un texto editable (data-contenido) en el HTML de las páginas.
+        // El catálogo (informacion_general) mezcla bloques (data-seccion) y textos, y un
+        // texto guardado en un bloque no se ve en la web: así el panel solo ofrece los textos.
+        // Se leen las páginas de PAGINAS y las del catálogo; las que no se puedan leer
+        // (ej: el panel abierto como archivo) no se filtran.
+        //   { claves: Set de claves con data-contenido, paginas: Set de páginas leídas }
+        let marcadoresTexto = null;
+        async function cargarMarcadoresTexto() {
+            const paginas = PAGINAS.slice();
+            seccionesDisponibles.forEach(function (s) {
+                if (s.pagina && paginas.indexOf(s.pagina) === -1) paginas.push(s.pagina);
+            });
+            const claves = new Set();
+            const leidas = new Set();
+            await Promise.all(paginas.map(async function (pagina) {
+                try {
+                    const respuesta = await fetch(pagina, { cache: "no-cache" });
+                    if (!respuesta.ok) return;
+                    // DOMParser no ejecuta los scripts de la página.
+                    const documento = new DOMParser().parseFromString(await respuesta.text(), "text/html");
+                    documento.querySelectorAll("[data-contenido]").forEach(function (el) {
+                        claves.add(el.getAttribute("data-contenido"));
+                    });
+                    leidas.add(pagina);
+                } catch (e) { /* página sin leer: sus secciones se muestran todas */ }
+            }));
+            marcadoresTexto = { claves: claves, paginas: leidas };
+        }
+
+        // Si el texto de una sección se ve en la web: true (la página tiene su data-contenido),
+        // false (se leyó la página y no lo tiene) o null (no se sabe).
+        function textoSeMuestra(clave) {
+            if (!marcadoresTexto || !clave) return null;
+            if (marcadoresTexto.claves.has(clave)) return true;
+            const pagina = seccionPorClave(clave).pagina;
+            // Las globales (sin página) se buscan en todas: basta con haber leído alguna.
+            const leida = pagina ? marcadoresTexto.paginas.has(pagina) : marcadoresTexto.paginas.size > 0;
+            return leida ? false : null;
+        }
+
         function obtenerTextoPlano(html) {
             const div = document.createElement("div");
             div.innerHTML = html || "";
@@ -453,6 +524,13 @@
             if (!partes) return valor;
             return new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]))
                 .toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+        }
+
+        // Enlaces que acepta el menú (igual que en assets/js/secciones.js): una página del
+        // sitio (pagina.html, con ?... o #... opcionales) o una dirección https:// o mailto:.
+        function enlaceMenuValido(enlace) {
+            return /^(https?:\/\/|mailto:)\S+$/i.test(enlace) ||
+                /^[\w.\/-]+\.html?([?#]\S*)?$/i.test(enlace);
         }
 
         // Si un anuncio se está mostrando hoy en index.html.
@@ -572,8 +650,9 @@
             });
             consulta = consulta.order(def.pk, { ascending: ascendente });
 
-            // Las tablas que se filtran por la página de su sección necesitan el catálogo al día.
-            const catalogo = def.paginaDeFila ? cargarSeccionesDisponibles() : null;
+            // Las tablas que se filtran por la página de su sección (Contenido de secciones)
+            // necesitan el catálogo al día y saber qué textos están en las páginas.
+            const catalogo = def.paginaDeFila ? cargarSeccionesDisponibles().then(cargarMarcadoresTexto) : null;
             const { data, error } = await consulta;
             await catalogo;
             // Si se cambió de pestaña mientras cargaba, esta respuesta ya no sirve.
@@ -645,7 +724,7 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(function (fila) {
+            tbody.innerHTML = data.map(function (fila, posicion) {
                 const celdas = columnas.map(function (c) {
                     const valor = fila[c.campo];
                     // Columna calculada (no es un campo de la tabla): una etiqueta de color.
@@ -686,12 +765,24 @@
                     }
                     if (c.tipo === "select" && c.opcionesDinamicas === "secciones") {
                         const texto = etiquetaSeccion(valor);
-                        return '<td class="celda-texto" title="' + escaparHtml(texto) + '">' + escaparHtml(texto) + "</td>";
+                        // Texto guardado en una sección que no tiene dónde mostrarlo en la página.
+                        const aviso = textoSeMuestra(valor) === false
+                            ? '<span class="badge text-bg-warning me-1" title="La página no tiene un texto editable con esta clave: este texto no aparece en la web. Puedes eliminarlo.">No se ve en la web</span>'
+                            : "";
+                        return '<td class="celda-texto" title="' + escaparHtml(texto) + '">' + aviso + escaparHtml(texto) + "</td>";
                     }
                     return '<td class="celda-texto" title="' + escaparHtml(valor) + '">' + escaparHtml(valor) + "</td>";
                 }).join("");
+                // Tablas con "reordenar": flechas para subir o bajar la fila (ej: Menú).
+                const flechas = def.reordenar
+                    ? '<div class="btn-group btn-group-sm me-1" role="group" aria-label="Cambiar el orden">' +
+                      '<button class="btn btn-outline-secondary" title="Subir" aria-label="Subir" onclick="moverFila(' + fila[def.pk] + ', -1)"' +
+                      (posicion === 0 ? " disabled" : "") + ">↑</button>" +
+                      '<button class="btn btn-outline-secondary" title="Bajar" aria-label="Bajar" onclick="moverFila(' + fila[def.pk] + ', 1)"' +
+                      (posicion === data.length - 1 ? " disabled" : "") + ">↓</button></div>"
+                    : "";
                 return "<tr>" + celdas +
-                    '<td class="text-end text-nowrap">' +
+                    '<td class="text-end text-nowrap">' + flechas +
                     '<button class="btn btn-outline-primary btn-sm me-1" onclick="abrirFormulario(' + fila[def.pk] + ')">Editar</button>' +
                     (def.soloEditar ? "" :
                         '<button class="btn btn-outline-danger btn-sm" onclick="eliminar(' + fila[def.pk] + ')">Eliminar</button>') +
@@ -740,7 +831,7 @@
                 if (c.tipo === "checkbox") {
                     return '<div class="form-check form-switch mb-3">' +
                         '<input class="form-check-input" type="checkbox" id="campo-' + c.campo + '"' +
-                        ((filaEditando ? valor : true) ? " checked" : "") + '>' +
+                        ((filaEditando ? valor : c.marcadoPorDefecto !== false) ? " checked" : "") + '>' +
                         '<label class="form-check-label" for="campo-' + c.campo + '">' + escaparHtml(c.etiqueta) + "</label>" + ayuda + "</div>";
                 }
                 const etiqueta = '<label class="form-label" for="campo-' + c.campo + '">' + escaparHtml(c.etiqueta) +
@@ -796,6 +887,8 @@
                         // Agrupadas por página para encontrarlas fácil en una lista larga.
                         const grupos = [];
                         seccionesDisponibles.forEach(function (s) {
+                            // Solo las secciones cuyo texto se ve en la web (y la de la fila que se edita).
+                            if (textoSeMuestra(s.clave) === false && s.clave !== valor) return;
                             const nombre = s.pagina || "Global (todas las páginas)";
                             let grupo = grupos.find(function (g) { return g.nombre === nombre; });
                             if (!grupo) grupos.push(grupo = { nombre: nombre, opciones: [] });
@@ -812,11 +905,23 @@
                     const placeholder = c.placeholder || "— Seleccionar —";
                     return '<div class="mb-3">' + etiqueta +
                         '<select class="form-select" id="campo-' + c.campo + '">' +
-                        '<option value="">' + escaparHtml(placeholder) + "</option>" + opciones + "</select>" + ayuda + "</div>";
+                        '<option value="">' + escaparHtml(placeholder) + "</option>" + opciones + "</select>" +
+                        (def.claveUnica === c.campo && !filaEditando
+                            ? '<div class="form-text text-primary-emphasis fw-semibold" id="aviso-clave-unica" hidden></div>'
+                            : "") +
+                        ayuda + "</div>";
                 }
+                // "sugerencias": valores que el navegador ofrece al escribir (se puede escribir otro).
+                const sugerencias = c.sugerencias
+                    ? '<datalist id="sugerencias-' + c.campo + '">' + c.sugerencias.map(function (s) {
+                          return '<option value="' + escaparHtml(s) + '">';
+                      }).join("") + "</datalist>"
+                    : "";
                 return '<div class="mb-3">' + etiqueta +
                     '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +
-                    '" value="' + escaparHtml(valor) + '"' + (c.tipo === "number" ? ' min="0"' : "") + ">" + ayuda + "</div>";
+                    '" value="' + escaparHtml(valor) + '"' + (c.tipo === "number" ? ' min="0"' : "") +
+                    (c.sugerencias ? ' list="sugerencias-' + c.campo + '" autocomplete="off"' : "") + ">" +
+                    sugerencias + ayuda + "</div>";
             }).join("");
 
             // Modal más ancho cuando el formulario tiene un editor de texto.
@@ -833,7 +938,63 @@
                 editoresRichText[c.campo] = instancia;
             });
 
+            if (def.claveUnica && !filaEditando) prepararClaveUnica(def);
+
             modalEdicion.show();
+        }
+
+        // Tablas con un solo registro por clave (ej: un texto por sección). Al agregar, si se
+        // elige una clave que ya tiene registro, el formulario pasa a editar ese registro en
+        // vez de fallar al guardar por la clave repetida:
+        //   - con el editor vacío, se carga el texto guardado para modificarlo;
+        //   - si ya se había escrito algo, se conserva y se avisa que reemplaza al guardado.
+        // Si luego se elige otra clave sin registro, vuelve a "Agregar" (y quita el texto
+        // cargado si no se cambió).
+        function prepararClaveUnica(def) {
+            const selector = document.getElementById("campo-" + def.claveUnica);
+            const aviso = document.getElementById("aviso-clave-unica");
+            const titulo = document.getElementById("modal-titulo");
+            const campos = def.campos.filter(function (c) { return c.tipo === "richtext"; })
+                .map(function (c) { return c.campo; });
+            let cargado = null; // { campo: html } del registro que se cargó en los editores
+
+            selector.addEventListener("change", function () {
+                const existente = (cargarDatos.filas || []).find(function (f) {
+                    return f[def.claveUnica] === selector.value;
+                });
+                // Sin cambios = editores vacíos o con el texto que se cargó tal cual.
+                const sinCambios = campos.every(function (campo) {
+                    const editor = editoresRichText[campo];
+                    return editor.getText().trim() === "" || (cargado && editor.root.innerHTML === cargado[campo]);
+                });
+
+                if (existente) {
+                    filaEditando = existente;
+                    titulo.textContent = "Editar — " + def.titulo;
+                    if (sinCambios) {
+                        cargado = {};
+                        campos.forEach(function (campo) {
+                            const editor = editoresRichText[campo];
+                            editor.root.innerHTML = existente[campo] || "";
+                            editor.update("silent"); // sincroniza el editor con el HTML puesto
+                            editor.history.clear();
+                            cargado[campo] = editor.root.innerHTML;
+                        });
+                        aviso.textContent = "Esta sección ya tenía texto: se cargó para que lo modifiques.";
+                    } else {
+                        aviso.textContent = "Esta sección ya tiene texto: al guardar se reemplaza por el que escribiste.";
+                    }
+                    aviso.hidden = false;
+                } else {
+                    filaEditando = null;
+                    titulo.textContent = "Agregar — " + def.titulo;
+                    if (cargado && sinCambios) {
+                        campos.forEach(function (campo) { editoresRichText[campo].setText(""); });
+                    }
+                    cargado = null;
+                    aviso.hidden = true;
+                }
+            });
         }
 
         // Registra íconos de deshacer/rehacer una sola vez para el editor.
@@ -1052,7 +1213,7 @@
 
             const { error } = await consulta;
             if (error) {
-                errorModal.textContent = "Error al guardar: " + error.message;
+                errorModal.textContent = "Error al guardar: " + mensajeErrorBase(error);
                 errorModal.style.display = "inline";
                 return;
             }
@@ -1060,13 +1221,60 @@
             cargarDatos();
         }
 
+        // Mensaje claro para los errores de la base más comunes al guardar o eliminar.
+        function mensajeErrorBase(error) {
+            const def = TABLAS[tablaActual];
+            if (error.code === "23505") { // valor repetido en una columna única (ej: la clave)
+                return def.mensajeRepetido || 'Ya existe un registro con ese valor. Búscalo en la lista y usa "Editar".';
+            }
+            if (error.code === "23503") { // otra tabla depende de este valor
+                return 'Otros datos dependen de esta clave (por ejemplo, un texto en "Contenido de secciones"). ' +
+                    "Revisa la clave o elimina primero esos datos.";
+            }
+            return error.message;
+        }
+
+        // Sube (paso -1) o baja (paso 1) una fila en la lista y guarda el nuevo orden:
+        // renumera las filas 1, 2, 3... y actualiza solo las que cambian.
+        let moviendoFila = false;
+        async function moverFila(pkValor, paso) {
+            const def = TABLAS[tablaActual];
+            if (moviendoFila) return; // evita clics repetidos mientras se guarda
+            const filas = (cargarDatos.filas || []).slice();
+            const desde = filas.findIndex(function (f) { return f[def.pk] === pkValor; });
+            const hasta = desde + paso;
+            if (desde === -1 || hasta < 0 || hasta >= filas.length) return;
+            filas.splice(hasta, 0, filas.splice(desde, 1)[0]);
+
+            const cambios = filas
+                .map(function (fila, i) { return { fila: fila, orden: i + 1 }; })
+                .filter(function (x) { return Number(x.fila.orden) !== x.orden; });
+            moviendoFila = true;
+            document.querySelectorAll("#tbody-datos button").forEach(function (b) { b.disabled = true; });
+            let error = null;
+            try {
+                const resultados = await Promise.all(cambios.map(function (x) {
+                    return supabaseClient.from(tablaActual).update({ orden: x.orden }).eq(def.pk, x.fila[def.pk]);
+                }));
+                const fallo = resultados.find(function (r) { return r.error; });
+                if (fallo) error = fallo.error;
+            } catch (e) {
+                error = e;
+            } finally {
+                moviendoFila = false;
+            }
+            await cargarDatos(); // vuelve a pintar la lista con el orden guardado (y limpia la alerta)
+            if (error) mostrarAlerta("Error al cambiar el orden: " + mensajeErrorBase(error));
+        }
+
         async function eliminar(pkValor) {
             const def = TABLAS[tablaActual];
-            if (!confirm("¿Eliminar este registro de \"" + def.titulo + "\"? Esta acción no se puede deshacer.")) return;
+            if (!confirm("¿Eliminar este registro de \"" + def.titulo + "\"? Esta acción no se puede deshacer." +
+                (def.avisoEliminar ? "\n\n" + def.avisoEliminar : ""))) return;
 
             const { error } = await supabaseClient.from(tablaActual).delete().eq(def.pk, pkValor);
             if (error) {
-                mostrarAlerta("Error al eliminar: " + error.message);
+                mostrarAlerta("Error al eliminar: " + mensajeErrorBase(error));
                 return;
             }
             cargarDatos();

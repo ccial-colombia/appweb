@@ -17,6 +17,7 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 | `productos` | `campatienda.html`, panel | Catalogo de CampaTienda |
 | `anuncios` | `index.html`, panel | Anuncios con fecha de inicio y fin, en el carrusel de bienvenida |
 | `articulos` | `elpunto.html`, `articulo.html`, panel | Articulos de la revista virtual El Punto, del mas nuevo al mas viejo |
+| `menu` | paginas con menu superior, panel | Opciones del menu superior: texto, enlace, orden y si se muestran |
 
 Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anuncios, fotos de autores de El Punto, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
 
@@ -36,6 +37,7 @@ Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anunci
 - `recursos_descargables.sql`: crea la tabla `descargables` (tipo `isl` o `juegos`, titulo, descripcion, PDF, tamaño, portada opcional, orden, visible) y el bucket `descargables` (solo PDF). `equipados.html` la muestra en "3. Recursos descargables", agrupada por tipo, y se administra en el panel, pestaña "Recursos descargables". Tambien registra la seccion `equipados.descargables` y sus 4 textos editables. Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `anuncios.sql`: crea la tabla `anuncios` (imagen, titulo, enlace opcional, fecha de inicio, fecha de fin, orden, visible). `index.html` muestra los anuncios vigentes en un carrusel, despues de la imagen de bienvenida (`index.portada`); se administran en el panel, pestaña "Anuncios". Las fechas se cuentan en hora de Colombia y la politica de lectura publica solo entrega los anuncios visibles y vigentes. Se puede ejecutar mas de una vez.
 - `articulos.sql`: crea la tabla `articulos` de la revista virtual El Punto, con estructura parecida a `testimonios` (titulo, autor, rol, foto del autor, contenido con formato, fecha de ingreso, visible). No tiene `orden`: `elpunto.html` muestra los articulos del mas nuevo al mas viejo segun `fecha_ingreso` (con la fecha visible en cada tarjeta) y `articulo.html?id=...` muestra uno completo. Se administran en el panel, pestaña "El Punto". Tambien registra las secciones y los textos de `elpunto.html` y el logo de la revista (`elpunto.logo`, en "Imagenes del sitio"). Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `menu.sql`: crea la tabla `menu` (texto, enlace, abrir en pestaña nueva, orden, visible) con las 7 opciones actuales del menu superior. `secciones.js` arma el menu de cada pagina con esa tabla; se administra en el panel, pestaña "Menú" (flechas ↑ ↓ para cambiar el orden). Las opciones iniciales solo se cargan si la tabla esta vacia, asi que se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `eliminar_juegos_graficos.sql`: borra las tablas `juegos` y `graficos` y quita del catalogo las secciones "Juegos con propósito" y "Gráficos" de `comunidad.html` (y sus textos). Solo hace falta en bases creadas antes de quitar esas secciones.
 - `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
 
@@ -78,6 +80,16 @@ secciones esta agrupado por pagina.
 Para hacer editable un texto nuevo: pon `data-contenido="pagina.nombre"` en el elemento,
 inserta su fila en `informacion_general` y luego escribe el texto en el panel.
 
+El panel lee el HTML de las paginas para saber que claves tienen `data-contenido`:
+
+- El desplegable de secciones solo ofrece esas claves. Los bloques (`data-seccion`) sin
+  texto propio no aparecen, porque un texto guardado ahi no se ve en la web. Si una pagina
+  no se puede leer (por ejemplo, con el panel abierto como archivo), se ofrecen todas sus claves.
+- Con "+ Agregar", si eliges una seccion que ya tiene texto, el formulario pasa a editar ese
+  texto (solo hay un texto por seccion).
+- Un texto guardado en una clave sin `data-contenido` aparece en la tabla con la etiqueta
+  "No se ve en la web": se puede eliminar.
+
 ## Imagenes del sitio
 
 Cada imagen fija del HTML lleva `data-imagen="clave"`:
@@ -95,6 +107,27 @@ Las claves `global.*` (logo y favicon) se usan en todas las paginas.
 
 Las imagenes de cursos, talleres, testimonios, articulos y productos se administran en sus propias
 pestañas del panel.
+
+## Menu superior
+
+La lista del menu de cada pagina lleva `data-menu`:
+
+```html
+<ul class="navbar-nav nav-dropdown nav-right" data-app-modern-menu="true" data-menu>
+```
+
+`secciones.js` consulta la tabla `menu` y cambia las opciones de esa lista por las visibles,
+ordenadas por `orden`; cada opcion copia las clases del primer enlace del HTML, para verse igual.
+Las opciones con "Abrir en una pestaña nueva" se abren en otra pestaña, y la de la pagina actual
+lleva `aria-current="page"`.
+
+- Si la tabla esta vacia o no se puede leer, queda el menu escrito en el HTML. Conviene mantener
+  ese menu del HTML parecido al de la tabla.
+- Solo se aceptan enlaces a paginas del sitio (`pagina.html`, con `?...` o `#...` opcionales) o
+  direcciones `https://` o `mailto:`; cualquier otro enlace se omite.
+- En el panel, pestaña "Menú", las flechas ↑ ↓ cambian el orden (renumeran las opciones 1, 2,
+  3...). Tambien se puede escribir el numero en "Orden".
+- Con mas de 7 opciones el menu puede ocupar dos filas en pantallas medianas.
 
 ## Orden de ejecucion (base nueva)
 
@@ -116,6 +149,7 @@ pestañas del panel.
    14. `recursos_descargables.sql`
    15. `anuncios.sql`
    16. `articulos.sql`
+   17. `menu.sql`
 3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
 4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
 5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).

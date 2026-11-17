@@ -12,6 +12,9 @@
  * También cambia las imágenes marcadas con data-imagen="clave" por las que
  * estén guardadas en la tabla "imagenes_sitio" (admin.html > Imágenes del sitio).
  *
+ * Arma el menú superior (la lista marcada con data-menu) con las opciones
+ * visibles de la tabla "menu", en su orden (admin.html > Menú).
+ *
  * Además ofrece el cliente de Supabase compartido por toda la página:
  *   obtenerClienteSupabase().then(function (cliente) { ... });
  * Así la librería se descarga una sola vez y la clave vive en un solo lugar.
@@ -33,10 +36,12 @@
     // Oculta los bloques administrables hasta saber cuáles están habilitados,
     // para que los deshabilitados no alcancen a verse al abrir la página.
     // Lo mismo con los textos e imágenes administrables, para que no se vea
-    // la versión anterior antes de la guardada en el panel.
+    // la versión anterior antes de la guardada en el panel. El menú también,
+    // para que no se vean las opciones en el orden anterior.
     var estilo = document.createElement("style");
     estilo.textContent = "." + CLASE_CARGANDO + " [data-seccion]," +
         "." + CLASE_CARGANDO + " [data-contenido]," +
+        "." + CLASE_CARGANDO + " [data-menu]," +
         "." + CLASE_CARGANDO + " img[data-imagen]{visibility:hidden}";
     document.head.appendChild(estilo);
     document.documentElement.classList.add(CLASE_CARGANDO);
@@ -226,6 +231,65 @@
             });
     }
 
+    // Enlaces que acepta el menú: páginas del sitio (pagina.html, con ?... o #...
+    // opcionales), direcciones https:// o mailto:. Cualquier otro (ej: javascript:) se omite.
+    function enlaceMenuValido(enlace) {
+        return /^(https?:\/\/|mailto:)\S+$/i.test(enlace) ||
+            /^[\w.\/-]+\.html?([?#]\S*)?$/i.test(enlace);
+    }
+
+    // Página a la que apunta un enlace del sitio ("elpunto.html#x" -> "elpunto.html").
+    function paginaDeEnlace(enlace) {
+        if (/^(https?:|mailto:)/i.test(enlace)) return "";
+        return enlace.split(/[?#]/)[0].split("/").pop().toLowerCase();
+    }
+
+    // Cambia las opciones de cada lista <ul data-menu> por las de la tabla "menu"
+    // (visibles, en su orden). Cada opción copia las clases del primer enlace que
+    // trae el HTML, para verse igual. Si la tabla está vacía o no se puede leer,
+    // queda el menú del HTML.
+    function aplicarMenu(cliente) {
+        var listas = document.querySelectorAll("[data-menu]");
+        if (listas.length === 0) return Promise.resolve();
+
+        return cliente
+            .from("menu")
+            .select("etiqueta, enlace, nueva_pestana")
+            .eq("visible", true)
+            .order("orden", { ascending: true })
+            .order("id", { ascending: true })
+            .then(function (respuesta) {
+                if (!respuesta || respuesta.error || !respuesta.data) return;
+                var opciones = respuesta.data.filter(function (o) {
+                    return o.etiqueta && o.enlace && enlaceMenuValido(String(o.enlace).trim());
+                });
+                if (opciones.length === 0) return;
+                var actual = paginaActual();
+
+                Array.prototype.forEach.call(listas, function (lista) {
+                    var modelo = lista.querySelector("a");
+                    var clases = modelo ? modelo.className : "nav-link link";
+                    var items = opciones.map(function (o) {
+                        var enlace = String(o.enlace).trim();
+                        var li = document.createElement("li");
+                        li.className = "nav-item";
+                        var a = document.createElement("a");
+                        a.className = clases;
+                        a.href = enlace;
+                        a.textContent = o.etiqueta;
+                        if (o.nueva_pestana) {
+                            a.target = "_blank";
+                            a.rel = "noopener";
+                        }
+                        if (paginaDeEnlace(enlace) === actual) a.setAttribute("aria-current", "page");
+                        li.appendChild(a);
+                        return li;
+                    });
+                    lista.replaceChildren.apply(lista, items);
+                });
+            });
+    }
+
     function ignorarError() {
         // Ante cualquier error se deja esa parte de la página tal como está en el HTML.
     }
@@ -233,7 +297,7 @@
     function aplicarSecciones() {
         obtenerClienteSupabase()
             .then(function (cliente) {
-                // Las tres consultas (secciones, textos e imágenes) van en paralelo.
+                // Las consultas (secciones, textos, imágenes y menú) van en paralelo.
                 var secciones = cliente
                     .from("informacion_general")
                     .select("clave, visible")
@@ -248,7 +312,8 @@
                     Promise.all([secciones, contenido]).then(function (resultados) {
                         ponerContenido(resultados[1]);
                     }),
-                    aplicarImagenes(cliente).catch(ignorarError)
+                    aplicarImagenes(cliente).catch(ignorarError),
+                    aplicarMenu(cliente).catch(ignorarError)
                 ]);
             })
             .catch(ignorarError)
