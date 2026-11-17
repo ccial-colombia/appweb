@@ -200,6 +200,7 @@
             "equipados.html",
             "exclusivo.html",
             "campatienda.html",
+            "elpunto.html",
             "enciclopedia.html",
             "normas.html",
             "valores.html"
@@ -246,6 +247,22 @@
                     { campo: "foto_url", etiqueta: "Foto", tipo: "image", bucket: "testimonios" },
                     { campo: "mensaje", etiqueta: "Testimonio", tipo: "richtext", requerido: true },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
+                    { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+                ]
+            },
+            // Artículos de la revista El Punto (elpunto.html y articulo.html; ver supabase/articulos.sql).
+            // No tienen "orden": se muestran del más nuevo al más viejo según la fecha de ingreso.
+            // Fotos de los autores en el bucket "contenido", carpeta articulos/.
+            articulos: {
+                titulo: "El Punto", pk: "id", ordenarPor: ["fecha_ingreso"], descendente: true, campos: [
+                    { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
+                    { campo: "autor", etiqueta: "Autor", tipo: "text",
+                      ayuda: "Opcional. Si lo dejas vacío no se muestra autor ni foto." },
+                    { campo: "rol", etiqueta: "Rol o ministerio", tipo: "text", ocultarEnTabla: true },
+                    { campo: "foto_url", etiqueta: "Foto del autor", tipo: "image", bucket: "contenido" },
+                    { campo: "contenido", etiqueta: "Artículo", tipo: "richtext", requerido: true },
+                    { campo: "fecha_ingreso", etiqueta: "Fecha de ingreso", tipo: "date", requerido: true, porDefecto: hoyEnColombia,
+                      ayuda: "Se muestra en el artículo. Los artículos se ordenan por esta fecha, del más nuevo al más viejo." },
                     { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
                 ]
             },
@@ -544,14 +561,16 @@
             mostrarAlerta("");
 
             // Orden: el que defina la tabla o, si no, página y orden cuando existan.
+            // Con "descendente" va de mayor a menor (ej: artículos, del más nuevo al más viejo).
+            const ascendente = !def.descendente;
             const columnas = def.ordenarPor || def.campos
                 .map(function (c) { return c.campo; })
                 .filter(function (campo) { return campo === "pagina" || campo === "orden"; });
             let consulta = supabaseClient.from(tablaActual).select("*");
             columnas.forEach(function (columna) {
-                consulta = consulta.order(columna, { ascending: true, nullsFirst: !!def.nulosPrimero });
+                consulta = consulta.order(columna, { ascending: ascendente, nullsFirst: !!def.nulosPrimero });
             });
-            consulta = consulta.order(def.pk, { ascending: true });
+            consulta = consulta.order(def.pk, { ascending: ascendente });
 
             // Las tablas que se filtran por la página de su sección necesitan el catálogo al día.
             const catalogo = def.paginaDeFila ? cargarSeccionesDisponibles() : null;

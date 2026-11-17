@@ -15,6 +15,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `descargables` | `equipados.html`, panel | Recursos descargables (PDF) |
 | `productos` | `campatienda.html`, panel | Catálogo de CampaTienda |
 | `anuncios` | `index.html`, panel | Anuncios del carrusel de bienvenida (con fechas) |
+| `articulos` | `elpunto.html`, `articulo.html`, panel | Artículos de la revista virtual El Punto |
 
 ## Table `psw_change`
 
@@ -194,6 +195,23 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `orden` | `int4` |  |
 | `visible` | `bool` |  |
 
+## Table `articulos`
+
+Sin columna `orden`: se ordena por `fecha_ingreso` (del más nuevo al más viejo) y luego por `id`.
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int4` | Primary |
+| `titulo` | `text` |  |
+| `autor` | `text` |  Nullable |
+| `rol` | `text` |  Nullable |
+| `foto_url` | `text` |  Nullable |
+| `contenido` | `text` |  |
+| `fecha_ingreso` | `date` |  Default: hoy (hora de Colombia) |
+| `visible` | `bool` |  |
+
 ## Table `imagenes_sitio`
 
 ### Columns
@@ -299,6 +317,13 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 |--------|---------|-------|--------|-------|------------|
 | `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
 | `lectura publica` | SELECT | public | PERMISSIVE | `visible = true and (now() at time zone 'America/Bogota')::date between fecha_inicio and fecha_fin` | — |
+
+### `articulos`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
+| `lectura publica` | SELECT | public | PERMISSIVE | `visible = true` | — |
 
 ### `imagenes_sitio`
 

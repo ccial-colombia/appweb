@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="icon" href="assets/images/favicon-192x192.png" data-imagen="global.favicon" type="image/png">
+    <title>El Punto | CCI AL/Colombia</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/theme/css/style.css">
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css?family=Inter:100,200,300,400,500,600,700,800,900&display=swap" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Inter:100,200,300,400,500,600,700,800,900&display=swap">
+    </noscript>
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,700;1,400;1,700&display=swap&display=swap"
+        as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,700;1,400;1,700&display=swap&display=swap">
+    </noscript>
+    <link rel="stylesheet" href="assets/css/contenido.css">
+    <link rel="stylesheet" href="assets/css/elpunto.css">
+    <script src="assets/js/secciones.js"></script>
+</head>
+
+<body class="ep-pagina-articulo">
+
+    <script>
+        if (sessionStorage.getItem("auth") !== "true") {
+            window.location.href = "index.html";
+        }
+    </script>
+
+    <!-- Un artículo de El Punto (articulo.html?id=...). Lo arma assets/js/elpunto.js
+         con la tabla "articulos" de Supabase (admin.html > El Punto). -->
+    <main class="ep-articulo-contenedor">
+        <a href="elpunto.html" class="ep-articulo-logo">
+            <img data-imagen="elpunto.logo" src="assets/images/elpunto-logo.svg"
+                alt="El Punto, revista virtual de CCI AL/Colombia">
+        </a>
+        <article class="ep-articulo" id="ep-articulo">
+            <p class="ep-estado" role="status">Cargando artículo…</p>
+        </article>
+        <div class="ep-volver">
+            <a href="elpunto.html" class="text-primary">&larr; Volver a El Punto</a>
+        </div>
+    </main>
+
+    <script src="assets/js/elpunto.js"></script>
+</body>
+
+</html>

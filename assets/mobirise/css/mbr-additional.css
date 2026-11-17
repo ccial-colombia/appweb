@@ -7382,3 +7382,10 @@ a {
     text-align: center;
   }
 }
+/* Menú superior con 7 opciones (se agregó El Punto): un poco menos de espacio entre
+   opciones para que quepan en una sola fila (antes: margin 0.667em 1em). */
+@media (min-width: 992px) {
+  .cid-sFAA5oUu2Y .nav-dropdown .link {
+    margin: 0.667em 0.75em !important;
+  }
+}

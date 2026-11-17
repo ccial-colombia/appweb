@@ -16,8 +16,9 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 | `descargables` | `equipados.html`, panel | Recursos descargables (PDF de ISL y de la Enciclopedia de Juegos) |
 | `productos` | `campatienda.html`, panel | Catalogo de CampaTienda |
 | `anuncios` | `index.html`, panel | Anuncios con fecha de inicio y fin, en el carrusel de bienvenida |
+| `articulos` | `elpunto.html`, `articulo.html`, panel | Articulos de la revista virtual El Punto, del mas nuevo al mas viejo |
 
-Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anuncios, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
+Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anuncios, fotos de autores de El Punto, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
 
 ## Archivos
 
@@ -34,6 +35,7 @@ Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anunci
 - `textos_editables.sql`: registra los 121 textos de las paginas (titulos y parrafos con `data-contenido`) en `informacion_general` y copia su texto actual a `contenido_secciones`, para editarlos en el panel, pestaña "Contenido de secciones". Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `recursos_descargables.sql`: crea la tabla `descargables` (tipo `isl` o `juegos`, titulo, descripcion, PDF, tamaño, portada opcional, orden, visible) y el bucket `descargables` (solo PDF). `equipados.html` la muestra en "3. Recursos descargables", agrupada por tipo, y se administra en el panel, pestaña "Recursos descargables". Tambien registra la seccion `equipados.descargables` y sus 4 textos editables. Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `anuncios.sql`: crea la tabla `anuncios` (imagen, titulo, enlace opcional, fecha de inicio, fecha de fin, orden, visible). `index.html` muestra los anuncios vigentes en un carrusel, despues de la imagen de bienvenida (`index.portada`); se administran en el panel, pestaña "Anuncios". Las fechas se cuentan en hora de Colombia y la politica de lectura publica solo entrega los anuncios visibles y vigentes. Se puede ejecutar mas de una vez.
+- `articulos.sql`: crea la tabla `articulos` de la revista virtual El Punto, con estructura parecida a `testimonios` (titulo, autor, rol, foto del autor, contenido con formato, fecha de ingreso, visible). No tiene `orden`: `elpunto.html` muestra los articulos del mas nuevo al mas viejo segun `fecha_ingreso` (con la fecha visible en cada tarjeta) y `articulo.html?id=...` muestra uno completo. Se administran en el panel, pestaña "El Punto". Tambien registra las secciones y los textos de `elpunto.html` y el logo de la revista (`elpunto.logo`, en "Imagenes del sitio"). Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `eliminar_juegos_graficos.sql`: borra las tablas `juegos` y `graficos` y quita del catalogo las secciones "Juegos con propósito" y "Gráficos" de `comunidad.html` (y sus textos). Solo hace falta en bases creadas antes de quitar esas secciones.
 - `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
 
@@ -91,7 +93,7 @@ Cada imagen fija del HTML lleva `data-imagen="clave"`:
 de mostrarla. Si la clave no tiene imagen guardada, o la consulta falla, queda la del HTML.
 Las claves `global.*` (logo y favicon) se usan en todas las paginas.
 
-Las imagenes de cursos, talleres, testimonios y productos se administran en sus propias
+Las imagenes de cursos, talleres, testimonios, articulos y productos se administran en sus propias
 pestañas del panel.
 
 ## Orden de ejecucion (base nueva)
@@ -113,6 +115,7 @@ pestañas del panel.
    13. `textos_editables.sql`
    14. `recursos_descargables.sql`
    15. `anuncios.sql`
+   16. `articulos.sql`
 3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
 4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
 5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).

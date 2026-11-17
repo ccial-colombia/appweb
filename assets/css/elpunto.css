@@ -1,0 +1,274 @@
+/* El Punto: revista virtual (elpunto.html y articulo.html).
+   Las tarjetas y el artículo los arma assets/js/elpunto.js con los datos de la tabla "articulos". */
+
+/* ---------- Encabezado: logo e introducción ---------- */
+
+.ep-encabezado {
+  padding: 3rem 0 1.5rem;
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.ep-logo {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  margin: 0 auto 1.5rem;
+}
+
+.ep-introduccion {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #444444;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ---------- Lista de artículos ---------- */
+
+.ep-articulos {
+  padding: 1.5rem 0 4rem;
+  background-color: #ffffff;
+}
+
+.ep-titulo {
+  font-family: 'Jost', sans-serif;
+  font-size: 2.2rem;
+  line-height: 1.3;
+  color: #045e5c;
+  text-align: center;
+  margin: 0 0 2rem;
+}
+
+.ep-estado {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: #555555;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+.ep-tarjeta {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(5, 56, 107, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ep-tarjeta:hover {
+  box-shadow: 0 8px 24px rgba(5, 56, 107, 0.14);
+  transform: translateY(-2px);
+}
+
+.ep-fecha {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #045e5c;
+  margin-bottom: 0.5rem;
+}
+
+.ep-tarjeta-titulo {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 0.75rem;
+}
+
+.ep-tarjeta-titulo a {
+  font-weight: inherit; /* el tema pone font-weight: 400 a todo enlace */
+  color: #05386b;
+  text-decoration: none;
+}
+
+.ep-tarjeta-titulo a:hover {
+  text-decoration: underline;
+}
+
+.ep-resumen {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #444444;
+  margin: 0 0 1rem;
+}
+
+/* El enlace baja al final de la tarjeta: así queda alineado en todas las tarjetas de una fila. */
+.ep-leer {
+  align-self: flex-start;
+  margin-top: auto;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #045e5c;
+}
+
+.ep-leer::after {
+  content: " \2192";
+}
+
+/* ---------- Autor (foto, nombre y rol, como en los testimonios) ---------- */
+
+.ep-autor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eef0f2;
+}
+
+.ep-autor-foto {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ep-autor-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+}
+
+/* El tema pone line-height: 1 a todo span, p y a: aquí se recupera el interlineado. */
+.ep-autor-datos span,
+.ep-introduccion :is(p, span, a),
+.ep-contenido :is(p, span, a, li, strong, em, u, s) {
+  line-height: inherit;
+}
+
+.ep-autor-nombre {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #232323;
+}
+
+.ep-autor-rol {
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+/* ---------- Artículo completo (articulo.html) ---------- */
+
+body.ep-pagina-articulo {
+  background: #f4f5f7;
+}
+
+.ep-articulo-contenedor {
+  max-width: 800px;
+  margin: 2.5rem auto;
+  padding: 0 1rem;
+}
+
+.ep-articulo-logo {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 1.5rem;
+}
+
+.ep-articulo-logo img {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+}
+
+.ep-articulo {
+  padding: 2.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(5, 56, 107, 0.08);
+}
+
+.ep-articulo-titulo {
+  font-family: 'Jost', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #05386b;
+  margin: 0 0 1.25rem;
+}
+
+.ep-autor.grande {
+  margin: 0 0 1.75rem;
+  padding: 0 0 1.25rem;
+  border-top: 0;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.ep-autor.grande .ep-autor-foto {
+  width: 64px;
+  height: 64px;
+}
+
+.ep-autor.grande .ep-autor-nombre {
+  font-size: 1.05rem;
+}
+
+.ep-contenido {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #232323;
+  overflow-wrap: break-word;
+}
+
+/* El editor guarda cada línea como un <p> y las líneas en blanco como <p><br></p>:
+   sin margen entre párrafos el artículo se ve igual que en el editor del panel. */
+.ep-contenido p {
+  margin-bottom: 0;
+}
+
+.ep-contenido :is(h1, h2, h3, h4) {
+  font-family: 'Jost', sans-serif;
+  line-height: 1.3;
+  color: #05386b;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.ep-contenido blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 4px solid #045e5c;
+  color: #555555;
+}
+
+.ep-contenido img {
+  max-width: 100%;
+  height: auto;
+}
+
+.ep-volver {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+@media (max-width: 575px) {
+  .ep-titulo {
+    font-size: 1.8rem;
+  }
+
+  .ep-articulo {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .ep-articulo-titulo {
+    font-size: 1.7rem;
+  }
+}

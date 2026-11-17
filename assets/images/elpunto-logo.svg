@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 190" width="640" height="190" role="img" aria-labelledby="titulo">
+  <title id="titulo">El Punto, revista virtual de CCI AL/Colombia</title>
+  <!-- Logo provisional: se reemplaza desde admin.html > Imágenes del sitio > "Logo de El Punto". -->
+  <text x="320" y="112" text-anchor="middle" font-family="Jost, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-size="104" font-weight="700" fill="#05386b">El Punto<tspan fill="#045e5c">.</tspan></text>
+  <rect x="200" y="134" width="240" height="3" rx="1.5" fill="#045e5c"/>
+  <text x="320" y="172" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-size="22" letter-spacing="3" fill="#045e5c">REVISTA VIRTUAL · CCI AL/COLOMBIA</text>
+</svg>
