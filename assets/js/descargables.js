@@ -2,10 +2,21 @@
 // de Supabase, agrupados por categoría. Se administran desde admin.html, en la
 // pestaña "Recursos descargables".
 // Requiere assets/js/secciones.js (obtenerClienteSupabase).
+//
+// Los PDF están en el bucket privado "descargables" de Supabase: no tienen una URL
+// fija que se pueda compartir. Al pulsar "Ver" o "Descargar" se pide un enlace
+// firmado que vence a los pocos minutos (VIGENCIA_ENLACE): si alguien copia ese
+// enlace y lo comparte, deja de abrir enseguida y hay que entrar por la página para
+// ver el PDF. Ver supabase/recursos_descargables.sql.
 (function () {
     "use strict";
 
     var CORREO = "comunicacionesccialcol@gmail.com";
+    var BUCKET = "descargables";
+
+    // Segundos que dura cada enlace firmado. Alcanza para que el PDF termine de
+    // cargar aun con conexión lenta; después el enlace ya no abre.
+    var VIGENCIA_ENLACE = 120;
 
     // Ícono que reemplaza la portada cuando el recurso no tiene una.
     var ICONO_PDF =
@@ -40,18 +51,99 @@
         return (base || "recurso") + ".pdf";
     }
 
-    // Los PDF subidos desde el panel están en Supabase Storage, en otro dominio,
-    // donde el navegador ignora el atributo "download": ahí se pide la descarga
-    // con el parámetro ?download=nombre. Los archivos del propio sitio usan "download".
-    function prepararDescarga(enlace, recurso) {
-        var url = recurso.archivo_url;
-        var nombre = nombreArchivo(recurso.titulo);
-        if (url.indexOf("/storage/v1/object/public/") !== -1) {
-            enlace.href = url + (url.indexOf("?") === -1 ? "?" : "&") + "download=" + encodeURIComponent(nombre);
-        } else {
-            enlace.href = url;
-            enlace.setAttribute("download", nombre);
+    // Ruta del PDF dentro del bucket, a partir de la URL que guarda el panel:
+    //   ".../storage/v1/object/public/descargables/descargables/123-x.pdf"
+    //   -> "descargables/123-x.pdf"
+    // null si el PDF no está en el bucket (ej: un archivo del propio sitio).
+    function rutaEnBucket(url) {
+        var marca = "/storage/v1/object/";
+        var i = url.indexOf(marca);
+        if (i === -1) return null;
+        // "public/descargables/descargables/123-x.pdf" (o "sign/..." en vez de "public/...")
+        var partes = url.slice(i + marca.length).split(/[?#]/)[0].split("/");
+        if (partes.length < 3 || partes[1] !== BUCKET) return null;
+        var ruta = partes.slice(2).join("/");
+        try { return decodeURIComponent(ruta); } catch (e) { return ruta; }
+    }
+
+    // Pide a Supabase un enlace temporal al PDF. Con "nombre" el enlace descarga
+    // el archivo con ese nombre en vez de abrirlo.
+    async function enlaceFirmado(ruta, nombre) {
+        var cliente = await window.obtenerClienteSupabase();
+        var respuesta = await cliente.storage.from(BUCKET)
+            .createSignedUrl(ruta, VIGENCIA_ENLACE, nombre ? { download: nombre } : undefined);
+        if (respuesta.error || !respuesta.data || !respuesta.data.signedUrl) {
+            throw respuesta.error || new Error("Supabase no devolvió el enlace del PDF.");
         }
+        return respuesta.data.signedUrl;
+    }
+
+    // "Ver": abre el PDF en una pestaña nueva. La pestaña se abre en el mismo clic,
+    // antes de esperar el enlace (si se abriera después, el navegador la bloquearía
+    // como ventana emergente), y luego se lleva al enlace firmado.
+    async function verPdf(ruta) {
+        var pestana = window.open("", "_blank");
+        if (pestana) {
+            try {
+                pestana.document.title = "Abriendo PDF…";
+                pestana.document.body.textContent = "Abriendo el PDF…";
+            } catch (e) { /* solo es un aviso mientras carga */ }
+        }
+        var url;
+        try {
+            url = await enlaceFirmado(ruta);
+        } catch (error) {
+            if (pestana) pestana.close();
+            throw error;
+        }
+        if (pestana) {
+            pestana.opener = null;
+            pestana.location.replace(url);
+        } else {
+            // Ventanas emergentes bloqueadas: se abre en esta misma pestaña.
+            window.location.href = url;
+        }
+    }
+
+    // "Descargar": el enlace firmado responde como descarga, así que la página no se va.
+    async function descargarPdf(ruta, recurso) {
+        window.location.href = await enlaceFirmado(ruta, nombreArchivo(recurso.titulo));
+    }
+
+    // Mensaje de error debajo de los botones de la tarjeta (vacío lo quita).
+    function avisar(acciones, texto) {
+        var aviso = acciones.querySelector(".rd-aviso");
+        if (!texto) {
+            if (aviso) aviso.remove();
+            return;
+        }
+        if (!aviso) {
+            aviso = crear("p", "rd-aviso");
+            aviso.setAttribute("role", "alert");
+            acciones.appendChild(aviso);
+        }
+        aviso.textContent = texto;
+    }
+
+    // Botón que pide el enlace firmado al pulsarlo. Es un botón y no un enlace para
+    // que no haya una dirección que copiar con "Copiar enlace".
+    function botonPdf(texto, clase, etiqueta, alPulsar) {
+        var boton = crear("button", "btn " + clase + " rd-btn", texto);
+        boton.type = "button";
+        boton.setAttribute("aria-label", etiqueta);
+        boton.addEventListener("click", function () {
+            if (boton.disabled) return;
+            var acciones = boton.parentNode;
+            boton.disabled = true;
+            avisar(acciones, "");
+            alPulsar()
+                .catch(function (error) {
+                    console.error("Recursos descargables: no se pudo abrir el PDF.", error);
+                    avisar(acciones, "No se pudo abrir el PDF. Recarga la página e intenta de nuevo.");
+                })
+                .then(function () { boton.disabled = false; });
+        });
+        return boton;
     }
 
     function miniatura(recurso) {
@@ -90,17 +182,27 @@
         cuerpo.appendChild(crear("p", "rd-meta", "PDF" + (tamano ? " · " + tamano : "")));
 
         var acciones = crear("div", "rd-acciones");
-        var descargar = crear("a", "btn btn-primary rd-btn", "Descargar");
-        prepararDescarga(descargar, recurso);
-        descargar.setAttribute("aria-label", "Descargar " + recurso.titulo + " (PDF)");
-        acciones.appendChild(descargar);
+        var ruta = rutaEnBucket(recurso.archivo_url);
+        if (ruta) {
+            acciones.appendChild(botonPdf("Descargar", "btn-primary", "Descargar " + recurso.titulo + " (PDF)",
+                function () { return descargarPdf(ruta, recurso); }));
+            acciones.appendChild(botonPdf("Ver", "btn-primary-outline", "Ver " + recurso.titulo + " en una pestaña nueva",
+                function () { return verPdf(ruta); }));
+        } else {
+            // PDF guardado en el propio sitio (no en el bucket): enlace directo, sin protección.
+            var descargar = crear("a", "btn btn-primary rd-btn", "Descargar");
+            descargar.href = recurso.archivo_url;
+            descargar.setAttribute("download", nombreArchivo(recurso.titulo));
+            descargar.setAttribute("aria-label", "Descargar " + recurso.titulo + " (PDF)");
+            acciones.appendChild(descargar);
 
-        var ver = crear("a", "btn btn-primary-outline rd-btn", "Ver");
-        ver.href = recurso.archivo_url;
-        ver.target = "_blank";
-        ver.rel = "noopener";
-        ver.setAttribute("aria-label", "Ver " + recurso.titulo + " en una pestaña nueva");
-        acciones.appendChild(ver);
+            var ver = crear("a", "btn btn-primary-outline rd-btn", "Ver");
+            ver.href = recurso.archivo_url;
+            ver.target = "_blank";
+            ver.rel = "noopener";
+            ver.setAttribute("aria-label", "Ver " + recurso.titulo + " en una pestaña nueva");
+            acciones.appendChild(ver);
+        }
 
         cuerpo.appendChild(acciones);
         articulo.appendChild(cuerpo);

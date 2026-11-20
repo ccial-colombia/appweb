@@ -47,12 +47,27 @@
         return foto;
     }
 
-    // Tarjeta: comillas, resumen del testimonio, enlace para leerlo completo y,
-    // al pie, quién lo da (foto, nombre y rol), como el autor de un artículo.
+    // Título opcional del testimonio (columna "titulo", ver supabase/testimonios_titulo.sql).
+    function tituloDe(testimonio) {
+        return String(testimonio.titulo || "").trim();
+    }
+
+    // Tarjeta: comillas, título (si tiene), resumen del testimonio, enlace para leerlo
+    // completo y, al pie, quién lo da (foto, nombre y rol), como el autor de un artículo.
+    // El encabezado de la tarjeta (h3) es el título o, si no hay, el nombre.
     function tarjeta(testimonio) {
         var columna = crear("div", "col-12 col-md-6 col-lg-4");
         var caja = crear("article", "ep-tarjeta tt-tarjeta");
         caja.appendChild(crear("span", "tt-comillas", "“")).setAttribute("aria-hidden", "true");
+
+        var titulo = tituloDe(testimonio);
+        if (titulo) {
+            var encabezado = crear("h3", "ep-tarjeta-titulo");
+            var enlaceTitulo = crear("a", null, titulo);
+            enlaceTitulo.href = enlaceTestimonio(testimonio.id);
+            encabezado.appendChild(enlaceTitulo);
+            caja.appendChild(encabezado);
+        }
 
         var texto = resumen(testimonio.mensaje);
         if (texto) caja.appendChild(crear("p", "ep-resumen tt-resumen", texto));
@@ -65,7 +80,7 @@
         var autor = crear("div", "ep-autor");
         if (testimonio.foto_url) autor.appendChild(fotoDe(testimonio, false));
         var datos = crear("div", "ep-autor-datos");
-        datos.appendChild(crear("h3", "ep-autor-nombre tt-nombre-tarjeta", testimonio.nombre));
+        datos.appendChild(crear(titulo ? "span" : "h3", "ep-autor-nombre tt-nombre-tarjeta", testimonio.nombre));
         if (testimonio.rol) datos.appendChild(crear("span", "ep-autor-rol", testimonio.rol));
         autor.appendChild(datos);
         caja.appendChild(autor);
@@ -77,9 +92,11 @@
     async function cargarLista(lista, estado) {
         try {
             var cliente = await window.obtenerClienteSupabase();
+            // "*" y no la lista de columnas: así funciona aunque todavía no exista
+            // la columna "titulo" (antes de ejecutar supabase/testimonios_titulo.sql).
             var respuesta = await cliente
                 .from("testimonios")
-                .select("id, nombre, rol, mensaje, foto_url")
+                .select("*")
                 .eq("visible", true)
                 .order("orden", { ascending: true })
                 .order("id", { ascending: true });
@@ -101,7 +118,9 @@
         contenedor.replaceChildren(crear("p", "ep-estado", texto));
     }
 
-    // Testimonio completo: "Testimonio", foto, nombre (título de la página) y rol,
+    // Testimonio completo, como un artículo de El Punto:
+    //   con título -> "Testimonio", el título y debajo quién lo da (foto, nombre y rol)
+    //   sin título -> "Testimonio" y quién lo da, con el nombre como título de la página
     // y debajo el mensaje con su formato.
     async function cargarTestimonio(contenedor) {
         var id = new URLSearchParams(window.location.search).get("id");
@@ -115,7 +134,7 @@
             var cliente = await window.obtenerClienteSupabase();
             var respuesta = await cliente
                 .from("testimonios")
-                .select("nombre, rol, mensaje, foto_url")
+                .select("*") // ver cargarLista(): funciona con o sin la columna "titulo"
                 .eq("id", id)
                 .eq("visible", true)
                 .maybeSingle();
@@ -131,20 +150,26 @@
             return;
         }
 
-        document.title = "Testimonio de " + testimonio.nombre + " | CCI AL/Colombia";
-        var etiqueta = crear("span", "ep-fecha", "Testimonio");
+        var titulo = tituloDe(testimonio);
+        document.title = (titulo ? titulo + " · " : "") + "Testimonio de " + testimonio.nombre + " | CCI AL/Colombia";
+        var partes = [crear("span", "ep-fecha", "Testimonio")];
+        if (titulo) partes.push(crear("h1", "ep-articulo-titulo", titulo));
 
-        var cabecera = crear("div", "ep-autor grande tt-cabecera");
+        var cabecera = crear("div", "ep-autor grande" + (titulo ? "" : " tt-cabecera"));
         if (testimonio.foto_url) cabecera.appendChild(fotoDe(testimonio, true));
         var datos = crear("div", "ep-autor-datos");
-        datos.appendChild(crear("h1", "ep-articulo-titulo tt-nombre", testimonio.nombre));
+        datos.appendChild(titulo
+            ? crear("span", "ep-autor-nombre", testimonio.nombre)
+            : crear("h1", "ep-articulo-titulo tt-nombre", testimonio.nombre));
         if (testimonio.rol) datos.appendChild(crear("span", "ep-autor-rol", testimonio.rol));
         cabecera.appendChild(datos);
+        partes.push(cabecera);
 
         // El mensaje es HTML con formato escrito en el panel (igual que el contenido de un artículo).
         var cuerpo = crear("div", "ep-contenido");
         cuerpo.innerHTML = testimonio.mensaje || "";
-        contenedor.replaceChildren(etiqueta, cabecera, cuerpo);
+        partes.push(cuerpo);
+        contenedor.replaceChildren.apply(contenedor, partes);
     }
 
     function iniciar() {

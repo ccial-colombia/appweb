@@ -83,6 +83,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `orden` | `int4` |  Nullable |
 | `visible` | `bool` |  Nullable |
 | `foto_url` | `text` |  Nullable |
+| `titulo` | `text` |  Nullable (opcional; `testimonios_titulo.sql`) |
 
 ## Table `cursos`
 

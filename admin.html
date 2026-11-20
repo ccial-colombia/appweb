@@ -498,11 +498,15 @@
             fincas: { titulo: "Fincas", pk: "id", campos: CAMPOS_FINCAS },
             transporte: { titulo: "Transporte", pk: "id", campos: CAMPOS_RECURSO },
             cocina: { titulo: "Cocina", pk: "id", campos: CAMPOS_RECURSO },
+            // Testimonios de comunidad.html y testimonio.html. "titulo" es opcional
+            // (ver supabase/testimonios_titulo.sql).
             testimonios: {
                 titulo: "Testimonios", pk: "id", campos: [
                     { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
                     { campo: "rol", etiqueta: "Rol o ministerio", tipo: "text" },
                     { campo: "foto_url", etiqueta: "Foto", tipo: "image", bucket: "testimonios" },
+                    { campo: "titulo", etiqueta: "Título", tipo: "text", textoVacio: "Sin título",
+                      ayuda: "Opcional. Se muestra como título del testimonio en la tarjeta y al leerlo. Si lo dejas vacío, se muestra con el nombre de quien lo da." },
                     { campo: "mensaje", etiqueta: "Testimonio", tipo: "richtext", requerido: true },
                     { campo: "orden", etiqueta: "Orden", tipo: "number" },
                     { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
@@ -547,7 +551,8 @@
                       ayuda: "Grupo de la página en el que aparece el recurso." },
                     { campo: "titulo", etiqueta: "Título", tipo: "text", requerido: true },
                     { campo: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
-                    { campo: "archivo_url", etiqueta: "Archivo PDF", tipo: "archivo", bucket: "descargables",
+                    // Bucket privado: "Ver PDF" pide un enlace temporal (ver abrirArchivoPrivado).
+                    { campo: "archivo_url", etiqueta: "Archivo PDF", tipo: "archivo", bucket: "descargables", privado: true,
                       soloPdf: true, campoTamano: "tamano_bytes", requerido: true,
                       ayuda: "Solo archivos PDF (máximo 50 MB en el plan gratuito de Supabase). Al editar, déjalo vacío para conservar el archivo actual." },
                     { campo: "imagen_url", etiqueta: "Portada", tipo: "image", bucket: "contenido", forma: "rectangular",
@@ -925,6 +930,60 @@
             return nombre.replace(/^\d{10,}-/, "") || "archivo";
         }
 
+        // Enlace a un archivo subido. Los de un bucket privado (campo con "privado",
+        // ej: los PDF de "descargables") no abren con su URL: al hacer clic se pide
+        // un enlace temporal (ver abrirArchivoPrivado).
+        function enlaceArchivo(c, url, texto) {
+            if (c.privado) {
+                return '<a href="#" data-bucket-privado="' + escaparHtml(c.bucket) + '" data-url="' + escaparHtml(url) + '">' +
+                    escaparHtml(texto) + "</a>";
+            }
+            return '<a href="' + escaparHtml(url) + '" target="_blank" rel="noopener">' + escaparHtml(texto) + "</a>";
+        }
+
+        // Ruta dentro del bucket a partir de la URL que se guarda al subir el archivo
+        // (".../storage/v1/object/public/<bucket>/<ruta>"). null si no es de ese bucket.
+        function rutaEnBucket(url, bucket) {
+            const marca = "/object/public/" + bucket + "/";
+            const i = String(url).indexOf(marca);
+            if (i === -1) return null;
+            const ruta = url.slice(i + marca.length).split(/[?#]/)[0];
+            try { return decodeURIComponent(ruta); } catch (e) { return ruta; }
+        }
+
+        // Abre en una pestaña nueva un archivo de un bucket privado con un enlace
+        // firmado de 60 segundos. La pestaña se abre en el mismo clic (si se abriera
+        // después de esperar el enlace, el navegador la bloquearía).
+        async function abrirArchivoPrivado(enlace) {
+            const url = enlace.getAttribute("data-url");
+            const bucket = enlace.getAttribute("data-bucket-privado");
+            const ruta = rutaEnBucket(url, bucket);
+            if (!ruta) { // ruta del propio sitio: abre directo
+                window.open(url, "_blank", "noopener");
+                return;
+            }
+            const pestana = window.open("", "_blank");
+            const { data, error } = await supabaseClient.storage.from(bucket).createSignedUrl(ruta, 60);
+            if (error || !data || !data.signedUrl) {
+                if (pestana) pestana.close();
+                alert("No se pudo abrir el archivo" + (error && error.message ? ": " + error.message : "."));
+                return;
+            }
+            if (pestana) {
+                pestana.opener = null;
+                pestana.location.replace(data.signedUrl);
+            } else {
+                window.location.href = data.signedUrl;
+            }
+        }
+
+        document.addEventListener("click", function (e) {
+            const enlace = e.target.closest && e.target.closest("a[data-bucket-privado]");
+            if (!enlace) return;
+            e.preventDefault();
+            abrirArchivoPrivado(enlace);
+        });
+
         function esPdf(archivo) {
             return archivo.type === "application/pdf" || /\.pdf$/i.test(archivo.name);
         }
@@ -1207,7 +1266,7 @@
                     if (c.tipo === "archivo") {
                         if (vacio(valor)) return '<td class="text-muted">Sin archivo</td>';
                         const tamano = c.campoTamano ? formatoTamano(fila[c.campoTamano]) : "";
-                        return '<td class="text-nowrap"><a href="' + escaparHtml(valor) + '" target="_blank" rel="noopener">Ver PDF</a>' +
+                        return '<td class="text-nowrap">' + enlaceArchivo(c, valor, "Ver PDF") +
                             (tamano ? ' <span class="text-muted small">' + escaparHtml(tamano) + "</span>" : "") + "</td>";
                     }
                     if (vacio(valor) && c.textoVacio) {
@@ -1340,8 +1399,7 @@
                     const tamanoActual = filaEditando && c.campoTamano ? formatoTamano(filaEditando[c.campoTamano]) : "";
                     return '<div class="mb-3">' + etiqueta +
                         (valor
-                            ? '<div class="mb-2 small">Archivo actual: <a href="' + escaparHtml(valor) + '" target="_blank" rel="noopener">' +
-                              escaparHtml(nombreDeArchivo(valor)) + "</a>" +
+                            ? '<div class="mb-2 small">Archivo actual: ' + enlaceArchivo(c, valor, nombreDeArchivo(valor)) +
                               (tamanoActual ? ' <span class="text-muted">(' + escaparHtml(tamanoActual) + ")</span>" : "") + "</div>"
                             : "") +
                         '<input class="form-control" type="file"' + (c.soloPdf ? ' accept=".pdf,application/pdf"' : "") +
@@ -1645,7 +1703,8 @@
                     continue;
                 }
 
-                // Documento (PDF): se sube al bucket y se guarda su URL pública y su tamaño.
+                // Documento (PDF): se sube al bucket y se guarda su URL y su tamaño. En un bucket
+                // privado esa URL no abre directo: solo indica dónde está el archivo (ver rutaEnBucket).
                 if (c.tipo === "archivo") {
                     const archivo = document.getElementById("campo-" + c.campo).files[0];
                     if (archivo) {
@@ -1740,6 +1799,11 @@
             if (error.code === "23503") { // otra tabla depende de este valor
                 return 'Otros datos dependen de esta clave (por ejemplo, un texto en "Contenido de secciones"). ' +
                     "Revisa la clave o elimina primero esos datos.";
+            }
+            if (error.code === "PGRST204") { // columna nueva cuyo script SQL aún no se ejecutó
+                const columna = /'([^']+)' column/.exec(error.message || "");
+                return "Falta " + (columna ? 'la columna "' + columna[1] + '"' : "una columna") +
+                    ' en Supabase: ejecuta el script pendiente de la carpeta supabase/ (ver supabase/README.md).';
             }
             return error.message;
         }

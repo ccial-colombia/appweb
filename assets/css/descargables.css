@@ -136,6 +136,20 @@
   outline-offset: 2px;
 }
 
+/* Mientras se pide el enlace temporal del PDF. */
+.rd-recurso .rd-btn:disabled {
+  cursor: progress;
+}
+
+/* Error al pedir el enlace del PDF (assets/js/descargables.js). */
+.rd-aviso {
+  flex-basis: 100%;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #b42318;
+}
+
 @media (max-width: 575px) {
   .rd-recurso {
     gap: 0.85rem;

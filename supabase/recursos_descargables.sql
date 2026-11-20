@@ -13,8 +13,9 @@
 --                     'juegos' = Enciclopedia de Juegos Creadores de Ambiente
 --   titulo       -> nombre del recurso
 --   descripcion  -> texto corto; los saltos de línea se respetan
---   archivo_url  -> URL pública del PDF. El panel lo sube al bucket
---                   "descargables"; también sirve una ruta del sitio.
+--   archivo_url  -> URL del PDF en el bucket privado "descargables" (la arma
+--                   el panel al subirlo; no abre directo: ver "Archivos PDF").
+--                   También sirve una ruta del sitio, pero esa no queda protegida.
 --   tamano_bytes -> tamaño del PDF (lo guarda el panel al subirlo)
 --   imagen_url   -> portada opcional (bucket "contenido", carpeta
 --                   descargables/). Sin portada se muestra un ícono de PDF.
@@ -27,6 +28,8 @@
 --
 -- Se puede ejecutar más de una vez: no duplica la tabla, las políticas,
 -- el bucket ni los textos, y no pisa lo que se haya editado en el panel.
+-- Si ya se había ejecutado con el bucket público, basta con volver a
+-- ejecutarlo para que pase a privado (los PDF subidos se conservan).
 -- =============================================================
 
 create table if not exists public.descargables (
@@ -57,20 +60,36 @@ create policy "admin total" on public.descargables
   for all to authenticated using (true) with check (true);
 
 -- ---------- Archivos PDF ----------
--- Bucket público "descargables", solo para PDF. El tamaño máximo de cada
--- archivo es el límite global del proyecto (50 MB en el plan gratuito;
--- se cambia en Storage > Settings).
+-- Bucket PRIVADO "descargables", solo para PDF: los PDF no tienen una URL
+-- pública fija. Al pulsar "Ver" o "Descargar", equipados.html pide un enlace
+-- firmado que vence a los 2 minutos (assets/js/descargables.js); si alguien
+-- copia ese enlace y lo comparte, deja de abrir y hay que entrar por la
+-- página. Las URLs públicas que se hayan compartido antes dejan de funcionar.
+-- El tamaño máximo de cada archivo es el límite global del proyecto (50 MB en
+-- el plan gratuito; se cambia en Storage > Settings).
 
 insert into storage.buckets (id, name, public, allowed_mime_types)
-values ('descargables', 'descargables', true, array['application/pdf'])
+values ('descargables', 'descargables', false, array['application/pdf'])
 on conflict (id) do update set
-  public = true,
+  public = false,
   allowed_mime_types = excluded.allowed_mime_types;
 
+-- La web (anon key) solo puede pedir enlaces de los PDF de recursos visibles.
+-- archivo_url termina en ".../descargables/<ruta>" y "name" es esa <ruta>.
 drop policy if exists "descargables lectura publica" on storage.objects;
-create policy "descargables lectura publica"
+drop policy if exists "descargables firmar visibles" on storage.objects;
+create policy "descargables firmar visibles"
   on storage.objects for select
-  using (bucket_id = 'descargables');
+  to anon
+  using (
+    bucket_id = 'descargables'
+    and exists (
+      select 1
+      from public.descargables d
+      where d.visible
+        and right(d.archivo_url, length('/descargables/' || objects.name)) = '/descargables/' || objects.name
+    )
+  );
 
 drop policy if exists "descargables admin total" on storage.objects;
 create policy "descargables admin total"
