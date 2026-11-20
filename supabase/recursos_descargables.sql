@@ -102,7 +102,7 @@ create policy "contenido admin total"
 -- ---------- Sección y textos de equipados.html ----------
 -- La sección se puede ocultar desde "Secciones de la web" y sus textos se
 -- editan en "Contenido de secciones". Si la clave ya existe solo se
--- actualizan página, título y orden (se respeta "visible").
+-- actualizan página y título (se respetan "orden" y "visible").
 
 insert into public.informacion_general (pagina, clave, titulo, orden, visible) values
   ('equipados.html', 'equipados.descargables', '3. Recursos descargables', 6, true),
@@ -112,8 +112,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('equipados.html', 'equipados.descargables_juegos_titulo', 'Recursos descargables · título Enciclopedia de Juegos', 6, true)
 on conflict (clave) do update set
   pagina = excluded.pagina,
-  titulo = excluded.titulo,
-  orden  = excluded.orden;
+  titulo = excluded.titulo;
 
 insert into public.contenido_secciones (seccion_clave, contenido) values
   ('equipados.descargables_titulo', '<p><strong>3. Recursos descargables</strong></p>'),

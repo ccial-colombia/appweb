@@ -18,6 +18,7 @@ Este directorio prepara la base de datos de CCI AL Colombia para Supabase.
 | `anuncios` | `index.html`, `inicio.html`, panel | Anuncios con fecha de inicio y fin, en el carrusel de bienvenida y en la seccion "Anuncios" de Inicio |
 | `articulos` | `elpunto.html`, `articulo.html`, panel | Articulos de la revista virtual El Punto, del mas nuevo al mas viejo |
 | `menu` | paginas con menu superior, panel | Opciones del menu superior: texto, enlace, orden y si se muestran |
+| `estilos_titulos` | todas las paginas, panel | Tipo de letra, tamaño y color de los titulos, subtitulos y titulos de tarjetas |
 
 Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anuncios, fotos de autores de El Punto, portadas de descargables e imagenes del sitio), `testimonios` (fotos de testimonios) y `descargables` (PDF de recursos descargables; solo acepta PDF).
 
@@ -38,6 +39,7 @@ Buckets de Storage: `contenido` (imagenes de cursos, talleres, productos, anunci
 - `anuncios.sql`: crea la tabla `anuncios` (imagen, titulo, enlace opcional, fecha de inicio, fecha de fin, orden, visible). `index.html` muestra los anuncios vigentes en un carrusel, despues de la imagen de bienvenida (`index.portada`), e `inicio.html` los muestra en la seccion "Anuncios" del final, sin la imagen de bienvenida (sin anuncios vigentes esa seccion no aparece). Ambos carruseles los arma `assets/js/anuncios.js` (`data-anuncios="portada"` o `"solo"`). Se administran en el panel, pestaña "Anuncios". Las fechas se cuentan en hora de Colombia y la politica de lectura publica solo entrega los anuncios visibles y vigentes. Tambien registra la seccion `inicio.anuncios` y su titulo (`inicio.anuncios_titulo`). Se puede ejecutar mas de una vez.
 - `articulos.sql`: crea la tabla `articulos` de la revista virtual El Punto, con estructura parecida a `testimonios` (titulo, autor, rol, foto del autor, contenido con formato, fecha de ingreso, visible). No tiene `orden`: `elpunto.html` muestra los articulos del mas nuevo al mas viejo segun `fecha_ingreso` (con la fecha visible en cada tarjeta) y `articulo.html?id=...` muestra uno completo. Se administran en el panel, pestaña "El Punto". Tambien registra las secciones y los textos de `elpunto.html` y el logo de la revista (`elpunto.logo`, en "Imagenes del sitio"). Se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
 - `menu.sql`: crea la tabla `menu` (texto, enlace, abrir en pestaña nueva, orden, visible) con las 7 opciones actuales del menu superior. `secciones.js` arma el menu de cada pagina con esa tabla; se administra en el panel, pestaña "Menú" (flechas ↑ ↓ para cambiar el orden). Las opciones iniciales solo se cargan si la tabla esta vacia, asi que se puede ejecutar mas de una vez sin perder los cambios hechos en el panel.
+- `estilos_titulos.sql`: crea la tabla `estilos_titulos` con tres grupos (titulos de pagina y de seccion, subtitulos y titulos de tarjetas), cada uno con tipo de letra, tamaño (% del original) y color. `secciones.js` los aplica en todas las paginas; se editan en el panel, "Configuración > Estilos de títulos". Vacio = original. Se puede ejecutar mas de una vez sin perder los estilos elegidos en el panel.
 - `eliminar_juegos_graficos.sql`: borra las tablas `juegos` y `graficos` y quita del catalogo las secciones "Juegos con propósito" y "Gráficos" de `comunidad.html` (y sus textos). Solo hace falta en bases creadas antes de quitar esas secciones.
 - `limpieza_tablas_sin_uso.sql`: borra las tablas, funciones, tipos y el trigger de `auth.users` del esquema inicial que la aplicacion nunca uso (`profiles`, `site_settings`, `social_links`, `pages`, `products`, `testimonials`, `video_embeds`, ...). Solo hace falta en bases creadas con ese esquema.
 
@@ -49,6 +51,16 @@ Cada bloque administrable del HTML lleva `data-seccion="clave"` y `assets/js/sec
 (incluido en el `<head>` de cada pagina) consulta `informacion_general` filtrando por el
 nombre del archivo. Los bloques con `visible = false` se quitan al cargar la pagina; los
 que no tengan fila en la tabla se muestran siempre.
+
+Los demas se acomodan segun `orden` (menor primero). Cada bloque (`data-seccion`) o texto
+(`data-contenido`) cambia de lugar solo con sus hermanos marcados, los que estan en el mismo
+contenedor del HTML: las secciones de la pagina entre si, el titulo y el texto de una seccion
+dentro de ella, etc. Lo que no esta marcado (menu, pie de pagina) y lo que no tiene orden se
+queda en su lugar; con el mismo orden se respeta el del HTML, asi que los elementos que
+comparten clave (ej: titulo y tabla de "Fincas") siguen juntos. Para que una seccion se pueda
+mover, su `data-seccion` debe ir en un elemento hermano de las demas secciones (en la practica,
+el `<section>` que cuelga del `<body>`). Los scripts SQL no pisan el `orden` de las filas que
+ya existen, para no perder lo que se cambie en el panel.
 
 Para agregar una seccion nueva: pon `data-seccion="pagina.clave"` en el HTML e inserta la
 fila correspondiente en `informacion_general` (o desde el panel, en "Secciones de la web").
@@ -129,6 +141,32 @@ lleva `aria-current="page"`.
   3...). Tambien se puede escribir el numero en "Orden".
 - Con mas de 7 opciones el menu puede ocupar dos filas en pantallas medianas.
 
+## Estilos de titulos
+
+En el panel, "Configuración > Estilos de títulos" cambia el tipo de letra, el tamaño y el color
+de tres grupos de titulos en todas las paginas. `secciones.js` sabe que clases del HTML son de
+cada grupo (`GRUPOS_ESTILO`):
+
+| Grupo (`clave`) | Clases |
+|---|---|
+| `titulos` | `mbr-section-title`, `titulo-cci-al`, `ep-titulo`, `ep-articulo-titulo`, `ct-titulo`, `anuncios-titulo` |
+| `subtitulos` | `mbr-section-subtitle`, `item-subtitle`, `rd-grupo-titulo` |
+| `tarjetas` | `card-title`, `item-title`, `ep-tarjeta-titulo`, `ct-producto-nombre`, `rd-nombre` |
+
+- Tipo de letra: uno de la lista del panel (`FUENTES_TITULOS` en `admin.html`, la misma que
+  `FUENTES` en `secciones.js`). Las de Google Fonts se cargan solo si se eligen, y la pagina
+  espera hasta 1,5 s a que esten listas antes de mostrarse.
+- Tamaño: porcentaje del tamaño de cada titulo (50 a 200). `secciones.js` mide el tamaño real de
+  cada elemento y lo escala, asi se conserva la diferencia entre titulos y la adaptacion a
+  celulares; vuelve a medir al cambiar el ancho de la ventana y cuando aparecen titulos nuevos
+  (tarjetas de El Punto, CampaTienda o Recursos descargables).
+- Color: uno solo para el grupo. Un texto con color propio puesto en "Contenido de secciones" (un
+  `<span>` con color dentro del titulo) lo conserva.
+- Vacio = original. Si la tabla no existe o no se puede leer, los titulos quedan como en el HTML.
+
+Para que un titulo nuevo tome estos estilos, usa una de las clases de su grupo (o agrega la clase
+al grupo en `GRUPOS_ESTILO`).
+
 ## Orden de ejecucion (base nueva)
 
 1. Crea el proyecto en Supabase.
@@ -150,6 +188,7 @@ lleva `aria-current="page"`.
    15. `anuncios.sql`
    16. `articulos.sql`
    17. `menu.sql`
+   18. `estilos_titulos.sql`
 3. Authentication > Users > Add user: crea el usuario administrador ("Auto Confirm User").
 4. Authentication > Sign In / Providers: desactiva "Allow new users to sign up".
 5. Carga la contraseña de miembros desde el panel (Contraseñas de acceso).

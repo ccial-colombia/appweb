@@ -19,7 +19,7 @@
 -- Las claves global.* (pie de página) se usan en todas las páginas.
 --
 -- Se puede ejecutar más de una vez: no pisa los textos editados en el
--- panel ni lo que se haya ocultado.
+-- panel ni lo que se haya ocultado o cambiado de orden.
 -- =============================================================
 
 -- 1) Catálogo de textos
@@ -147,8 +147,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('valores.html', 'valores.valor_10_texto', 'Valor 10 · texto', 5, true)
 on conflict (clave) do update set
   pagina = excluded.pagina,
-  titulo = excluded.titulo,
-  orden  = excluded.orden;
+  titulo = excluded.titulo;
 
 -- 2) Texto actual de cada página
 insert into public.contenido_secciones (seccion_clave, contenido) values

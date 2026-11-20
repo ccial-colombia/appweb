@@ -3,8 +3,9 @@
  *
  * Cada bloque administrable del HTML lleva el atributo data-seccion="clave".
  * La tabla "informacion_general" de Supabase guarda una fila por bloque con
- * su página, su clave, su título y si está habilitado; aquí se consulta esa
- * tabla y se quitan del DOM los bloques deshabilitados.
+ * su página, su clave, su título, su orden y si está habilitado; aquí se
+ * consulta esa tabla, se quitan del DOM los bloques deshabilitados y los demás
+ * se acomodan según su orden (admin.html > Secciones de la web).
  *
  * Pone en los elementos marcados con data-contenido="clave" el texto guardado
  * en la tabla "contenido_secciones" (admin.html > Contenido de secciones).
@@ -14,6 +15,9 @@
  *
  * Arma el menú superior (la lista marcada con data-menu) con las opciones
  * visibles de la tabla "menu", en su orden (admin.html > Menú).
+ *
+ * Aplica a los títulos y subtítulos el tipo de letra, el tamaño y el color de
+ * la tabla "estilos_titulos" (admin.html > Configuración > Estilos de títulos).
  *
  * Además ofrece el cliente de Supabase compartido por toda la página:
  *   obtenerClienteSupabase().then(function (cliente) { ... });
@@ -112,6 +116,64 @@
                 deshabilitadas[bloque.getAttribute("data-contenido")]) {
                 if (bloque.parentNode) bloque.parentNode.removeChild(bloque);
             }
+        });
+    }
+
+    // Acomoda los bloques (data-seccion) y textos (data-contenido) según la columna
+    // "orden" (menor primero). Cada uno cambia de lugar solo con sus hermanos marcados,
+    // es decir, los que están en el mismo contenedor: las secciones de la página entre
+    // sí, el título y el texto de una sección entre sí, etc. Lo que no está marcado
+    // (menú, pie de página, scripts) y lo que no tiene orden en la tabla se queda
+    // donde está en el HTML. Con el mismo orden se respeta el del HTML, así que los
+    // elementos que comparten clave (ej: el título y la tabla de "Fincas") siguen juntos.
+    function ordenar(filas) {
+        var ordenPorClave = {};
+        filas.forEach(function (fila) {
+            if (fila.orden != null && isFinite(fila.orden)) ordenPorClave[fila.clave] = Number(fila.orden);
+        });
+        function ordenDe(el) {
+            var claves = [el.getAttribute("data-seccion"), el.getAttribute("data-contenido")];
+            for (var i = 0; i < claves.length; i++) {
+                if (claves[i] && Object.prototype.hasOwnProperty.call(ordenPorClave, claves[i])) {
+                    return ordenPorClave[claves[i]];
+                }
+            }
+            return null;
+        }
+
+        // Agrupa los elementos con orden por contenedor, en el orden del HTML.
+        var contenedores = [];
+        var grupos = [];
+        var elementos = document.querySelectorAll("[data-seccion], [data-contenido]");
+        Array.prototype.forEach.call(elementos, function (el, posicion) {
+            var orden = ordenDe(el);
+            if (orden === null || !el.parentNode) return;
+            var i = contenedores.indexOf(el.parentNode);
+            if (i === -1) {
+                i = contenedores.push(el.parentNode) - 1;
+                grupos.push([]);
+            }
+            grupos[i].push({ el: el, orden: orden, posicion: posicion });
+        });
+
+        grupos.forEach(function (grupo) {
+            if (grupo.length < 2) return;
+            var ordenados = grupo.slice().sort(function (a, b) {
+                return a.orden - b.orden || a.posicion - b.posicion;
+            });
+            // Lugares que cambian de elemento. Los que ya están bien no se tocan
+            // (mover un elemento recarga sus videos e iframes).
+            var lugares = [];
+            grupo.forEach(function (actual, i) {
+                if (ordenados[i] !== actual) {
+                    var marca = document.createComment("");
+                    actual.el.parentNode.insertBefore(marca, actual.el);
+                    lugares.push({ marca: marca, nuevo: ordenados[i].el });
+                }
+            });
+            lugares.forEach(function (lugar) {
+                lugar.marca.parentNode.replaceChild(lugar.nuevo, lugar.marca);
+            });
         });
     }
 
@@ -290,6 +352,212 @@
             });
     }
 
+    // ==================== ESTILOS DE TÍTULOS ====================
+    // Grupos de títulos y las clases que usan las páginas para cada uno. La clave es
+    // la de la tabla "estilos_titulos". Si un elemento está en dos grupos, manda el
+    // primero de la lista.
+    var GRUPOS_ESTILO = [
+        { clave: "titulos", selector: ".mbr-section-title, .titulo-cci-al, .ep-titulo, .ep-articulo-titulo, .ct-titulo, .anuncios-titulo" },
+        { clave: "subtitulos", selector: ".mbr-section-subtitle, .item-subtitle, .rd-grupo-titulo" },
+        { clave: "tarjetas", selector: ".card-title, .item-title, .ep-tarjeta-titulo, .ct-producto-nombre, .rd-nombre" }
+    ];
+
+    // Tipos de letra que ofrece el panel (la misma lista que FUENTES_TITULOS en admin.html).
+    // "google": familia y grosores para Google Fonts; sin "google" es una letra del sistema.
+    var FUENTES = {
+        "Inter": { google: "Inter:wght@400;600;700", respaldo: "sans-serif" },
+        "Jost": { google: "Jost:wght@400;600;700", respaldo: "sans-serif" },
+        "Montserrat": { google: "Montserrat:wght@400;600;700", respaldo: "sans-serif" },
+        "Poppins": { google: "Poppins:wght@400;600;700", respaldo: "sans-serif" },
+        "Roboto": { google: "Roboto:wght@400;500;700", respaldo: "sans-serif" },
+        "Open Sans": { google: "Open+Sans:wght@400;600;700", respaldo: "sans-serif" },
+        "Lato": { google: "Lato:wght@400;700", respaldo: "sans-serif" },
+        "Raleway": { google: "Raleway:wght@400;600;700", respaldo: "sans-serif" },
+        "Nunito": { google: "Nunito:wght@400;600;700", respaldo: "sans-serif" },
+        "Work Sans": { google: "Work+Sans:wght@400;600;700", respaldo: "sans-serif" },
+        "Oswald": { google: "Oswald:wght@400;600;700", respaldo: "sans-serif" },
+        "Playfair Display": { google: "Playfair+Display:wght@400;700", respaldo: "serif" },
+        "Merriweather": { google: "Merriweather:wght@400;700", respaldo: "serif" },
+        "Lora": { google: "Lora:wght@400;700", respaldo: "serif" },
+        "Arial": { respaldo: "sans-serif" },
+        "Verdana": { respaldo: "sans-serif" },
+        "Georgia": { respaldo: "serif" }
+    };
+    var ESPERA_FUENTE = 1500; // máximo que se espera una letra de Google antes de mostrar la página
+
+    // Los mismos formatos que exige la tabla: así nada raro llega al CSS.
+    var FUENTE_VALIDA = /^[A-Za-z0-9 ]{1,60}$/;
+    var COLOR_VALIDO = /^#[0-9A-Fa-f]{6}$/;
+
+    function consultarEstilos(cliente) {
+        return cliente
+            .from("estilos_titulos")
+            .select("clave, fuente, tamano, color")
+            .then(function (respuesta) {
+                return respuesta && !respuesta.error ? respuesta.data : null;
+            });
+    }
+
+    function familiaCss(nombre) {
+        var fuente = FUENTES[nombre] || {};
+        return '"' + nombre + '", ' + (fuente.respaldo || "sans-serif");
+    }
+
+    // Carga una letra de Google Fonts y espera a que esté lista (o ESPERA_FUENTE),
+    // para que los títulos no aparezcan primero con otra letra.
+    function cargarFuente(nombre) {
+        var fuente = FUENTES[nombre];
+        if (!fuente || !fuente.google) return Promise.resolve();
+        return new Promise(function (resolver) {
+            var enlace = document.createElement("link");
+            enlace.rel = "stylesheet";
+            enlace.href = "https://fonts.googleapis.com/css2?family=" + fuente.google + "&display=swap";
+            enlace.onload = function () {
+                if (!document.fonts || !document.fonts.load) return resolver();
+                Promise.all([
+                    document.fonts.load('400 1em "' + nombre + '"'),
+                    document.fonts.load('700 1em "' + nombre + '"')
+                ]).then(resolver, resolver);
+            };
+            enlace.onerror = resolver;
+            document.head.appendChild(enlace);
+            setTimeout(resolver, ESPERA_FUENTE);
+        });
+    }
+
+    // Reglas de letra y color. Van con !important y con :not(#_) (que suma peso de id)
+    // para ganarle a los estilos de cada página. Los textos con color propio puesto en
+    // "Contenido de secciones" (un <span> con color dentro del título) lo conservan.
+    // Se escriben del último grupo al primero: si un elemento está en dos, gana el primero.
+    function reglasDeEstilos(grupos) {
+        var reglas = [
+            // Tamaño: lo calcula escalarTamanos() para cada elemento (ver más abajo).
+            "html:not(.estilos-midiendo) [data-estilo-tam]:not(#_){font-size:var(--estilo-tam)!important}",
+            "html:not(.estilos-midiendo) [data-estilo-alto]:not(#_){line-height:var(--estilo-alto)!important}"
+        ];
+        grupos.slice().reverse().forEach(function (g) {
+            var selector = ":is(" + g.selector + "):not(#_)";
+            var declaraciones = [];
+            if (g.fuente) declaraciones.push("font-family:" + familiaCss(g.fuente) + "!important");
+            if (g.color) declaraciones.push("color:" + g.color + "!important");
+            if (declaraciones.length) reglas.push(selector + "{" + declaraciones.join(";") + "}");
+            // Los enlaces dentro del título (ej: el título de un artículo) toman su color.
+            if (g.color) reglas.push(selector + ' a:not([style*="color"]){color:inherit!important}');
+        });
+        return reglas.join("\n");
+    }
+
+    // ---------- Tamaño ----------
+    // El tamaño es un porcentaje del original de cada título, que cambia según la página,
+    // la clase y el ancho de la pantalla. Por eso se mide el tamaño real de cada elemento
+    // (con las reglas de tamaño apagadas: clase "estilos-midiendo") y se le pone el
+    // tamaño escalado en la variable --estilo-tam. Se vuelve a medir al cambiar el ancho
+    // de la ventana y cuando aparecen títulos nuevos (tarjetas que se arman después).
+
+    function buscarEn(raiz, selector) {
+        var lista = raiz.querySelectorAll ? Array.prototype.slice.call(raiz.querySelectorAll(selector)) : [];
+        if (raiz.matches && raiz.matches(selector)) lista.unshift(raiz);
+        return lista;
+    }
+
+    // Elementos de "raiz" con tamaño a escalar, cada uno con el factor de su grupo.
+    function elementosAEscalar(grupos, raiz) {
+        var vistos = [];
+        var lista = [];
+        grupos.forEach(function (g) {
+            buscarEn(raiz, g.selector).forEach(function (el) {
+                if (vistos.indexOf(el) !== -1) return;
+                vistos.push(el);
+                if (g.factor) lista.push({ el: el, factor: g.factor });
+            });
+        });
+        return lista;
+    }
+
+    function escalarTamanos(lista) {
+        if (lista.length === 0) return;
+        var raiz = document.documentElement;
+        // Primero se leen todos los tamaños originales y después se escriben,
+        // para que el navegador recalcule los estilos una sola vez.
+        raiz.classList.add("estilos-midiendo");
+        var medidas = lista.map(function (x) {
+            var calculado = getComputedStyle(x.el);
+            return {
+                tamano: parseFloat(calculado.fontSize),
+                alto: /px$/.test(calculado.lineHeight) ? parseFloat(calculado.lineHeight) : null
+            };
+        });
+        raiz.classList.remove("estilos-midiendo");
+        lista.forEach(function (x, i) {
+            var m = medidas[i];
+            if (!(m.tamano > 0)) return;
+            x.el.style.setProperty("--estilo-tam", (m.tamano * x.factor).toFixed(2) + "px");
+            x.el.setAttribute("data-estilo-tam", "");
+            // El alto de línea también, por si la página lo fija en px (ej: en celulares).
+            if (m.alto) {
+                x.el.style.setProperty("--estilo-alto", (m.alto * x.factor).toFixed(2) + "px");
+                x.el.setAttribute("data-estilo-alto", "");
+            } else {
+                x.el.style.removeProperty("--estilo-alto");
+                x.el.removeAttribute("data-estilo-alto");
+            }
+        });
+    }
+
+    function vigilarTamanos(grupos) {
+        escalarTamanos(elementosAEscalar(grupos, document));
+
+        var espera = null;
+        window.addEventListener("resize", function () {
+            clearTimeout(espera);
+            espera = setTimeout(function () { escalarTamanos(elementosAEscalar(grupos, document)); }, 150);
+        });
+
+        if (!window.MutationObserver || !document.body) return;
+        new MutationObserver(function (cambios) {
+            var lista = [];
+            cambios.forEach(function (cambio) {
+                Array.prototype.forEach.call(cambio.addedNodes, function (nodo) {
+                    if (nodo.nodeType === 1) lista = lista.concat(elementosAEscalar(grupos, nodo));
+                });
+            });
+            escalarTamanos(lista);
+        }).observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Aplica los estilos guardados. Devuelve una promesa que termina cuando las letras
+    // elegidas están cargadas (o pasó ESPERA_FUENTE). Sin estilos guardados no hace nada.
+    function aplicarEstilos(filas) {
+        if (!filas || filas.length === 0) return Promise.resolve();
+        var porClave = {};
+        filas.forEach(function (fila) { porClave[fila.clave] = fila; });
+
+        var grupos = GRUPOS_ESTILO.map(function (g) {
+            var fila = porClave[g.clave] || {};
+            var tamano = Number(fila.tamano);
+            return {
+                selector: g.selector,
+                fuente: FUENTE_VALIDA.test(fila.fuente || "") ? fila.fuente : null,
+                color: COLOR_VALIDO.test(fila.color || "") ? fila.color : null,
+                factor: tamano >= 50 && tamano <= 200 && tamano !== 100 ? tamano / 100 : null
+            };
+        });
+        if (!grupos.some(function (g) { return g.fuente || g.color || g.factor; })) return Promise.resolve();
+
+        var hoja = document.createElement("style");
+        hoja.id = "estilos-titulos";
+        hoja.textContent = reglasDeEstilos(grupos);
+        document.head.appendChild(hoja);
+
+        if (grupos.some(function (g) { return g.factor; })) vigilarTamanos(grupos);
+
+        var fuentes = [];
+        grupos.forEach(function (g) {
+            if (g.fuente && fuentes.indexOf(g.fuente) === -1) fuentes.push(g.fuente);
+        });
+        return Promise.all(fuentes.map(cargarFuente));
+    }
+
     function ignorarError() {
         // Ante cualquier error se deja esa parte de la página tal como está en el HTML.
     }
@@ -297,24 +565,33 @@
     function aplicarSecciones() {
         obtenerClienteSupabase()
             .then(function (cliente) {
-                // Las consultas (secciones, textos, imágenes y menú) van en paralelo.
+                // Las consultas (secciones, textos, imágenes, menú y estilos) van en paralelo.
                 var secciones = cliente
                     .from("informacion_general")
-                    .select("clave, visible")
+                    .select("clave, visible, orden")
                     .eq("pagina", paginaActual())
                     .then(function (respuesta) {
-                        if (respuesta && !respuesta.error && respuesta.data) aplicar(respuesta.data);
+                        if (respuesta && !respuesta.error && respuesta.data) {
+                            aplicar(respuesta.data);
+                            ordenar(respuesta.data);
+                        }
                     })
                     .catch(ignorarError);
                 var contenido = consultarContenido(cliente).catch(ignorarError);
-                return Promise.all([
+                var estilos = consultarEstilos(cliente).catch(ignorarError);
+                var pagina = Promise.all([
                     // Los textos se ponen después de quitar los bloques ocultos.
                     Promise.all([secciones, contenido]).then(function (resultados) {
                         ponerContenido(resultados[1]);
                     }),
                     aplicarImagenes(cliente).catch(ignorarError),
                     aplicarMenu(cliente).catch(ignorarError)
-                ]);
+                ]).catch(ignorarError);
+                // Los estilos de títulos van al final, con los textos ya puestos,
+                // porque el tamaño se mide sobre los títulos definitivos.
+                return Promise.all([pagina, estilos]).then(function (resultados) {
+                    return aplicarEstilos(resultados[1]);
+                });
             })
             .catch(ignorarError)
             .then(revelar);

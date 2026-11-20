@@ -85,7 +85,7 @@ create policy "contenido admin total"
 -- ---------- Secciones y textos de elpunto.html ----------
 -- Las secciones se pueden ocultar desde "Secciones de la web" y los
 -- textos se editan en "Contenido de secciones". Si la clave ya existe
--- solo se actualizan página, título y orden (se respeta "visible").
+-- solo se actualizan página y título (se respetan "orden" y "visible").
 
 insert into public.informacion_general (pagina, clave, titulo, orden, visible) values
   ('elpunto.html', 'elpunto.encabezado', 'Logo e introducción', 1, true),
@@ -94,8 +94,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('elpunto.html', 'elpunto.articulos_titulo', 'Artículos · título', 2, true)
 on conflict (clave) do update set
   pagina = excluded.pagina,
-  titulo = excluded.titulo,
-  orden  = excluded.orden;
+  titulo = excluded.titulo;
 
 insert into public.contenido_secciones (seccion_clave, contenido) values
   ('elpunto.introduccion', '<p>El Punto es la revista virtual de CCI AL/Colombia. Aquí encontrarás artículos, reflexiones y experiencias para quienes sirven en el ministerio de campamentos.</p>'),

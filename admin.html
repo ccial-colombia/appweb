@@ -256,6 +256,20 @@
         /* Fondo gris para que se vean también las imágenes blancas o transparentes (logos). */
         .miniatura-rect { width: 72px; height: 48px; object-fit: contain; border-radius: 4px; background: #9aa0a6; }
         .vista-previa-rect { max-height: 160px; max-width: 100%; border-radius: 8px; display: block; background: #9aa0a6; padding: 4px; }
+        /* Campos de color (Estilos de títulos): muestra en la tabla y selector en el formulario. */
+        .muestra-color {
+            display: inline-block; width: 1.1rem; height: 1.1rem; margin-right: 0.5rem; vertical-align: -0.2em;
+            border-radius: 4px; border: 1px solid var(--borde-suave);
+        }
+        .campo-color .form-control-color { width: 3.5rem; height: 2.5rem; transition: opacity 0.15s; }
+        .campo-color.usa-original .form-control-color { opacity: 0.4; }
+        /* Vista previa de estilos: fondo blanco en los dos temas, como en la web. */
+        .vista-previa-estilo {
+            padding: 1.25rem 1.5rem; border-radius: 0.75rem; border: 1px solid var(--borde-suave);
+            background: #fff; color: #212529; overflow-wrap: anywhere;
+        }
+        .vista-previa-estilo .muestra-estilo { line-height: 1.25; }
+        .vista-previa-estilo .nota-estilo { margin-top: 0.75rem; font-size: 0.8125rem; color: #6c757d; }
         /* Editor de texto amplio, estilo procesador de texto */
         .ql-container { font-size: 1rem; }
         .ql-editor { min-height: 340px; max-height: 60vh; overflow-y: auto; background: #fff; }
@@ -428,7 +442,7 @@
         ];
 
         // Definición de cada tabla administrable y sus campos.
-        // tipo: text | textarea | number | date | checkbox | select | image | richtext | archivo
+        // tipo: text | textarea | number | date | checkbox | select | image | richtext | archivo | color
         // En "select", cada opción puede ser un texto o { valor, texto }.
         const CAMPOS_RECURSO = [
             { campo: "nombre", etiqueta: "Nombre", tipo: "text", requerido: true },
@@ -455,6 +469,29 @@
             { campo: "descripcion", etiqueta: "Descripción", tipo: "richtext" },
             { campo: "orden", etiqueta: "Orden", tipo: "number" },
             { campo: "visible", etiqueta: "Visible en la web", tipo: "checkbox" }
+        ];
+
+        // Tipos de letra para Estilos de títulos. La misma lista que FUENTES en
+        // assets/js/secciones.js (que es quien las carga en la web): si agregas una, agrégala allá.
+        // "google": familia y grosores para Google Fonts; sin "google" es una letra del sistema.
+        const FUENTES_TITULOS = [
+            { valor: "Inter", texto: "Inter", google: "Inter:wght@400;600;700" },
+            { valor: "Jost", texto: "Jost", google: "Jost:wght@400;600;700" },
+            { valor: "Montserrat", texto: "Montserrat", google: "Montserrat:wght@400;600;700" },
+            { valor: "Poppins", texto: "Poppins", google: "Poppins:wght@400;600;700" },
+            { valor: "Roboto", texto: "Roboto", google: "Roboto:wght@400;500;700" },
+            { valor: "Open Sans", texto: "Open Sans", google: "Open+Sans:wght@400;600;700" },
+            { valor: "Lato", texto: "Lato", google: "Lato:wght@400;700" },
+            { valor: "Raleway", texto: "Raleway", google: "Raleway:wght@400;600;700" },
+            { valor: "Nunito", texto: "Nunito", google: "Nunito:wght@400;600;700" },
+            { valor: "Work Sans", texto: "Work Sans", google: "Work+Sans:wght@400;600;700" },
+            { valor: "Oswald", texto: "Oswald (angosta)", google: "Oswald:wght@400;600;700" },
+            { valor: "Playfair Display", texto: "Playfair Display (con serifa)", google: "Playfair+Display:wght@400;700", serifa: true },
+            { valor: "Merriweather", texto: "Merriweather (con serifa)", google: "Merriweather:wght@400;700", serifa: true },
+            { valor: "Lora", texto: "Lora (con serifa)", google: "Lora:wght@400;700", serifa: true },
+            { valor: "Arial", texto: "Arial (del sistema)" },
+            { valor: "Verdana", texto: "Verdana (del sistema)" },
+            { valor: "Georgia", texto: "Georgia (del sistema, con serifa)", serifa: true }
         ];
 
         const TABLAS = {
@@ -614,7 +651,9 @@
                     { campo: "pagina", etiqueta: "Página", tipo: "select", opciones: PAGINAS, placeholder: "— Sin página —" },
                     { campo: "titulo", etiqueta: "Sección", tipo: "text" },
                     { campo: "clave", etiqueta: "Clave (identificador único)", tipo: "text", requerido: true },
-                    { campo: "orden", etiqueta: "Orden", tipo: "number" },
+                    // secciones.js acomoda cada bloque entre sus hermanos (ver ordenar()).
+                    { campo: "orden", etiqueta: "Orden", tipo: "number",
+                      ayuda: "Posición en la página (menor primero): las secciones se ordenan entre sí y el título y el texto de una sección, dentro de ella. Con el mismo número se mantiene el orden original." },
                     { campo: "visible", etiqueta: "Habilitado en la web", tipo: "checkbox" }
                 ]
             },
@@ -635,6 +674,32 @@
                       ayuda: "Solo aparecen las secciones que tienen un texto editable en la página. Si eliges una que ya tiene texto, se abre ese texto para modificarlo." },
                     { campo: "contenido", etiqueta: "Contenido", tipo: "richtext",
                       ayuda: "Cada línea del editor es una línea en la página. Los títulos y párrafos mantienen el tamaño y color de la página: usa negrita, cursiva, subrayado o enlaces para resaltar. Si dejas el texto vacío, la página muestra el texto original." }
+                ]
+            },
+            // Tipo de letra, tamaño y color de los títulos de todas las páginas (ver
+            // supabase/estilos_titulos.sql). assets/js/secciones.js los aplica en cada página.
+            // Las filas (un grupo de títulos cada una) las crea el script SQL.
+            estilos_titulos: {
+                titulo: "Estilos de títulos", pk: "id", soloEditar: true, ordenarPor: ["orden"],
+                validar: function (valorDe) {
+                    const tamano = valorDe("tamano");
+                    if (tamano && !(Number(tamano) >= 50 && Number(tamano) <= 200)) {
+                        return "El tamaño debe estar entre 50 % y 200 % (o vacío para dejar el original).";
+                    }
+                    return "";
+                },
+                vistaPrevia: pintarVistaPreviaEstilo,
+                campos: [
+                    { campo: "nombre", etiqueta: "Elemento", tipo: "text", soloLectura: true },
+                    { campo: "descripcion", etiqueta: "Dónde se aplica", tipo: "textarea", soloLectura: true },
+                    { campo: "fuente", etiqueta: "Tipo de letra", tipo: "select", opciones: FUENTES_TITULOS,
+                      placeholder: "Original (la de cada título)", textoVacio: "Original",
+                      ayuda: "La misma letra para todos los títulos del grupo, en todas las páginas." },
+                    { campo: "tamano", etiqueta: "Tamaño (%)", tipo: "number", min: 50, max: 200, paso: 5,
+                      textoVacio: "Original", formato: function (v) { return v + " %"; },
+                      ayuda: "Porcentaje del tamaño actual de cada título: 100 = sin cambio, 120 = 20 % más grande, 80 = 20 % más pequeño. Se mantiene la proporción entre títulos y en celulares. Vacío = original." },
+                    { campo: "color", etiqueta: "Color", tipo: "color", textoVacio: "Original", colorInicial: "#05386b",
+                      ayuda: "Un solo color para todos los títulos del grupo. Los textos a los que les pusiste un color en \"Contenido de secciones\" lo conservan." }
                 ]
             },
             psw_change: {
@@ -719,6 +784,81 @@
             // Las globales (sin página) se buscan en todas: basta con haber leído alguna.
             const leida = pagina ? marcadoresTexto.paginas.has(pagina) : marcadoresTexto.paginas.size > 0;
             return leida ? false : null;
+        }
+
+        // ==================== ESTILOS DE TÍTULOS ====================
+
+        // Ejemplo de cada grupo para la vista previa, con su letra, tamaño (px en escritorio)
+        // y color de hoy, que es lo que se ve cuando el campo queda en "Original".
+        const MUESTRAS_ESTILO = {
+            titulos: { texto: "Bienvenido a CampaTienda", fuente: "Jost", tamano: 44.8, color: "#045e5c" },
+            subtitulos: { texto: "¡Solo para nuestra familia CCI AL!", fuente: "Inter", tamano: 22.4, color: "#232323" },
+            tarjetas: { texto: "Dependencia de Dios", fuente: "Jost", tamano: 22.4, color: "#05386b" }
+        };
+
+        // Carga en el panel una letra de Google Fonts (para la vista previa), una sola vez.
+        const fuentesCargadasPanel = new Set();
+        function cargarFuentePanel(nombre) {
+            const fuente = FUENTES_TITULOS.find(function (f) { return f.valor === nombre; });
+            if (!fuente || !fuente.google || fuentesCargadasPanel.has(nombre)) return;
+            fuentesCargadasPanel.add(nombre);
+            const enlace = document.createElement("link");
+            enlace.rel = "stylesheet";
+            enlace.href = "https://fonts.googleapis.com/css2?family=" + fuente.google + "&display=swap";
+            document.head.appendChild(enlace);
+        }
+
+        function familiaCssPanel(nombre) {
+            const fuente = FUENTES_TITULOS.find(function (f) { return f.valor === nombre; });
+            return '"' + nombre + '", ' + (fuente && fuente.serifa ? "serif" : "sans-serif");
+        }
+
+        // Valor de un campo "color": null si está marcado "Usar el color original".
+        function valorColor(campo) {
+            const original = document.getElementById("campo-" + campo + "-original");
+            if (original && original.checked) return null;
+            const control = document.getElementById("campo-" + campo);
+            return control ? control.value : null;
+        }
+
+        // Vista previa del formulario de Estilos de títulos: un título de ejemplo del grupo
+        // con los valores elegidos (o los de hoy, en los campos que quedan en "Original").
+        function pintarVistaPreviaEstilo(contenedor, fila) {
+            const muestra = MUESTRAS_ESTILO[fila && fila.clave] || MUESTRAS_ESTILO.titulos;
+            const fuente = document.getElementById("campo-fuente").value || muestra.fuente;
+            const porcentaje = Number(document.getElementById("campo-tamano").value);
+            const factor = porcentaje >= 50 && porcentaje <= 200 ? porcentaje / 100 : 1;
+            cargarFuentePanel(fuente);
+
+            const ejemplo = document.createElement("div");
+            ejemplo.className = "muestra-estilo";
+            ejemplo.style.fontFamily = familiaCssPanel(fuente);
+            ejemplo.style.fontSize = (muestra.tamano * factor).toFixed(1) + "px";
+            ejemplo.style.color = valorColor("color") || muestra.color;
+            const negrita = document.createElement("strong");
+            negrita.textContent = muestra.texto;
+            ejemplo.appendChild(negrita);
+
+            const nota = document.createElement("div");
+            nota.className = "nota-estilo";
+            nota.textContent = "Ejemplo con el tamaño que tiene en computador (" + (muestra.tamano * factor).toFixed(0) +
+                " px). En la web cada título conserva su tamaño propio, escalado con el mismo porcentaje.";
+            contenedor.replaceChildren(ejemplo, nota);
+        }
+
+        // Campos "color": al elegir un color se desmarca "Usar el color original", y el
+        // selector se ve atenuado mientras esa opción esté marcada.
+        function prepararCamposColor(def) {
+            def.campos.forEach(function (c) {
+                if (c.tipo !== "color") return;
+                const selector = document.getElementById("campo-" + c.campo);
+                const original = document.getElementById("campo-" + c.campo + "-original");
+                const caja = selector.closest(".campo-color");
+                const actualizar = function () { caja.classList.toggle("usa-original", original.checked); };
+                selector.addEventListener("input", function () { original.checked = false; actualizar(); });
+                original.addEventListener("change", actualizar);
+                actualizar();
+            });
         }
 
         function obtenerTextoPlano(html) {
@@ -838,6 +978,7 @@
             { titulo: "Comunidad", tablas: ["fincas", "transporte", "cocina", "testimonios"] },
             { titulo: "Contenido", tablas: ["articulos", "cursos", "talleres", "videos", "descargables", "productos", "anuncios"] },
             { titulo: "Sitio web", tablas: ["menu", "imagenes_sitio", "informacion_general", "contenido_secciones"] },
+            { titulo: "Configuración", tablas: ["estilos_titulos"] },
             { titulo: "Acceso", tablas: ["psw_change"] }
         ];
         const PRESENTACION = {
@@ -854,8 +995,9 @@
             anuncios: { icono: "megaphone", descripcion: "Carrusel de bienvenida, con fecha de inicio y de fin." },
             menu: { icono: "menu-button-wide", descripcion: "Opciones del menú superior de las páginas." },
             imagenes_sitio: { icono: "images", descripcion: "Logo, portadas, fondos y demás imágenes fijas de las páginas." },
-            informacion_general: { icono: "grid-1x2", descripcion: "Secciones de cada página: habilítalas u ocúltalas." },
+            informacion_general: { icono: "grid-1x2", descripcion: "Secciones de cada página: habilítalas, ocúltalas o cambia su orden." },
             contenido_secciones: { icono: "pencil-square", descripcion: "Títulos y párrafos editables de las páginas." },
+            estilos_titulos: { icono: "palette", descripcion: "Tipo de letra, tamaño y color de los títulos y subtítulos de todas las páginas." },
             psw_change: { icono: "key", descripcion: "Contraseña con la que los miembros entran al sitio." }
         };
 
@@ -967,7 +1109,11 @@
             // Si se cambió de pestaña mientras cargaba, esta respuesta ya no sirve.
             if (tablaPedida !== tablaActual) return;
             if (error) {
-                mostrarAlerta("Error al cargar los datos: " + error.message);
+                // Tabla nueva cuyo script SQL aún no se ejecutó (ej: estilos_titulos).
+                const sinTabla = error.code === "PGRST205" || error.code === "42P01";
+                mostrarAlerta(sinTabla
+                    ? 'La tabla "' + tablaActual + '" todavía no existe en Supabase: ejecuta su script de la carpeta supabase/ (ver supabase/README.md).'
+                    : "Error al cargar los datos: " + error.message);
                 cargarDatos.filas = [];
             } else {
                 cargarDatos.filas = data || [];
@@ -1067,6 +1213,15 @@
                     if (vacio(valor) && c.textoVacio) {
                         return '<td class="text-muted">' + escaparHtml(c.textoVacio) + "</td>";
                     }
+                    if (c.tipo === "color") {
+                        // Solo #rrggbb llega al atributo style (la tabla también lo exige).
+                        const muestra = /^#[0-9a-f]{6}$/i.test(valor)
+                            ? '<span class="muestra-color" style="background:' + valor + '"></span>' : "";
+                        return '<td class="text-nowrap">' + muestra + escaparHtml(valor) + "</td>";
+                    }
+                    if (c.formato && !vacio(valor)) {
+                        return '<td class="text-nowrap">' + escaparHtml(c.formato(valor)) + "</td>";
+                    }
                     if (c.tipo === "select" && c.opciones) {
                         const texto = textoOpcion(c, valor);
                         return '<td class="celda-texto" title="' + escaparHtml(texto) + '">' + escaparHtml(texto) + "</td>";
@@ -1153,6 +1308,11 @@
                 // Campo informativo: se muestra pero no se edita ni se guarda.
                 if (c.soloLectura) {
                     const texto = vacio(valor) ? (c.textoVacio || "") : valor;
+                    if (c.tipo === "textarea") {
+                        return '<div class="mb-3">' + etiqueta +
+                            '<textarea class="form-control" rows="2" id="campo-' + c.campo + '" disabled>' + escaparHtml(texto) + "</textarea>" +
+                            ayuda + "</div>";
+                    }
                     return '<div class="mb-3">' + etiqueta +
                         '<input class="form-control" type="text" id="campo-' + c.campo + '" value="' + escaparHtml(texto) + '" disabled>' +
                         ayuda + "</div>";
@@ -1190,6 +1350,18 @@
                 if (c.tipo === "richtext") {
                     return '<div class="mb-3">' + etiqueta +
                         '<div id="campo-' + c.campo + '"></div>' + ayuda + "</div>";
+                }
+                // Color: selector + "Usar el color original" (vacío en la tabla). Ver prepararCamposColor().
+                if (c.tipo === "color") {
+                    const usaOriginal = !/^#[0-9a-f]{6}$/i.test(valor || "");
+                    return '<div class="mb-3">' + etiqueta +
+                        '<div class="campo-color d-flex align-items-center gap-3 flex-wrap">' +
+                        '<input class="form-control form-control-color" type="color" id="campo-' + c.campo + '" value="' +
+                        escaparHtml(usaOriginal ? (c.colorInicial || "#000000") : valor.toLowerCase()) + '" title="Elegir color">' +
+                        '<div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="campo-' + c.campo + '-original"' +
+                        (usaOriginal ? " checked" : "") + '>' +
+                        '<label class="form-check-label" for="campo-' + c.campo + '-original">Usar el color original</label></div>' +
+                        "</div>" + ayuda + "</div>";
                 }
                 if (c.tipo === "select") {
                     const opcion = function (o) {
@@ -1233,7 +1405,11 @@
                     : "";
                 return '<div class="mb-3">' + etiqueta +
                     '<input class="form-control" type="' + c.tipo + '" id="campo-' + c.campo +
-                    '" value="' + escaparHtml(valor) + '"' + (c.tipo === "number" ? ' min="0"' : "") +
+                    '" value="' + escaparHtml(valor) + '"' +
+                    (c.tipo === "number"
+                        ? ' min="' + (c.min != null ? c.min : 0) + '"' + (c.max != null ? ' max="' + c.max + '"' : "") +
+                          (c.paso ? ' step="' + c.paso + '"' : "")
+                        : "") +
                     (c.sugerencias ? ' list="sugerencias-' + c.campo + '" autocomplete="off"' : "") + ">" +
                     sugerencias + ayuda + "</div>";
             }).join("");
@@ -1253,6 +1429,21 @@
             });
 
             if (def.claveUnica && !filaEditando) prepararClaveUnica(def);
+            prepararCamposColor(def);
+
+            // Vista previa en vivo (ej: Estilos de títulos): se vuelve a pintar con cada cambio.
+            const camposModal = document.getElementById("modal-campos");
+            if (def.vistaPrevia) {
+                camposModal.insertAdjacentHTML("beforeend",
+                    '<div class="mb-1"><div class="form-label">Vista previa</div><div id="vista-previa" class="vista-previa-estilo"></div></div>');
+                const pintar = function () { def.vistaPrevia(document.getElementById("vista-previa"), filaEditando); };
+                camposModal.oninput = pintar;
+                camposModal.onchange = pintar;
+                pintar();
+            } else {
+                camposModal.oninput = null;
+                camposModal.onchange = null;
+            }
 
             modalEdicion.show();
         }
@@ -1501,6 +1692,11 @@
                         return;
                     }
                     registro[c.campo] = textoPlano === "" ? null : instancia.root.innerHTML;
+                    continue;
+                }
+
+                if (c.tipo === "color") {
+                    registro[c.campo] = valorColor(c.campo);
                     continue;
                 }
 

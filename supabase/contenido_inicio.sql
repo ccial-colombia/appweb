@@ -22,7 +22,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('inicio.html', 'inicio.vision', 'Visión (texto)', 3, true),
   ('inicio.html', 'inicio.mision', 'Misión (texto)', 3, true)
 on conflict (clave) do update set
-  pagina = excluded.pagina, titulo = excluded.titulo, orden = excluded.orden;
+  pagina = excluded.pagina, titulo = excluded.titulo;
 
 insert into public.contenido_secciones (seccion_clave, contenido) values
   ('inicio.encabezado', '<h1 class="mbr-section-title mbr-fonts-style mb-3 titulo-cci-al"><strong>Equipando a quienes impactan vidas en campamentos</strong></h1>'),

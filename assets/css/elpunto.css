@@ -1,21 +1,9 @@
 /* El Punto: revista virtual (elpunto.html y articulo.html).
    Las tarjetas y el artículo los arma assets/js/elpunto.js con los datos de la tabla "articulos". */
 
-/* ---------- Encabezado: logo e introducción ---------- */
-
-.ep-encabezado {
-  padding: 3rem 0 1.5rem;
-  background-color: #ffffff;
-  text-align: center;
-}
-
-.ep-logo {
-  display: block;
-  width: 100%;
-  max-width: 520px;
-  height: auto;
-  margin: 0 auto 1.5rem;
-}
+/* ---------- Encabezado: logo e introducción ----------
+   La sección y el logo usan los estilos de la bienvenida de CampaTienda
+   (header9 cid-v5MlSzjqEp en mbr-additional.css). */
 
 .ep-introduccion {
   font-family: 'Inter', sans-serif;

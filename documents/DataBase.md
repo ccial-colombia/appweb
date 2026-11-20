@@ -17,6 +17,7 @@ tablas del esquema inicial que la aplicación no usa (`profiles`, `site_settings
 | `anuncios` | `index.html`, `inicio.html`, panel | Anuncios del carrusel de bienvenida y de la sección "Anuncios" de Inicio (con fechas) |
 | `articulos` | `elpunto.html`, `articulo.html`, panel | Artículos de la revista virtual El Punto |
 | `menu` | páginas con menú superior, panel | Opciones del menú superior (texto, enlace, orden) |
+| `estilos_titulos` | todas las páginas, panel | Tipo de letra, tamaño y color de títulos y subtítulos |
 
 ## Table `psw_change`
 
@@ -228,6 +229,23 @@ Sin columna `orden`: se ordena por `fecha_ingreso` (del más nuevo al más viejo
 | `orden` | `int4` |  |
 | `visible` | `bool` |  |
 
+## Table `estilos_titulos`
+
+Una fila por grupo de títulos (`titulos`, `subtitulos`, `tarjetas`); las crea `estilos_titulos.sql` y el panel solo las edita. `secciones.js` las aplica en todas las páginas. Vacío = original.
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int4` | Primary |
+| `clave` | `text` |  Unique |
+| `nombre` | `text` |  |
+| `descripcion` | `text` |  Nullable |
+| `fuente` | `text` |  Nullable; letras, números y espacios |
+| `tamano` | `int4` |  Nullable; 50 a 200 (% del original) |
+| `color` | `text` |  Nullable; `#rrggbb` |
+| `orden` | `int4` |  Default: 0 |
+
 ## Table `imagenes_sitio`
 
 ### Columns
@@ -347,6 +365,13 @@ Sin columna `orden`: se ordena por `fecha_ingreso` (del más nuevo al más viejo
 |--------|---------|-------|--------|-------|------------|
 | `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
 | `lectura publica` | SELECT | public | PERMISSIVE | `visible = true` | — |
+
+### `estilos_titulos`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `admin total` | ALL | authenticated | PERMISSIVE | `true` | `true` |
+| `lectura publica` | SELECT | public | PERMISSIVE | `true` | — |
 
 ### `imagenes_sitio`
 

@@ -24,7 +24,8 @@ create index if not exists idx_informacion_general_pagina
 
 -- ---------- Catálogo de secciones ----------
 -- Vuelve a ejecutarse sin problema: si la clave ya existe solo actualiza
--- página, título y orden, y respeta el valor de "visible" que ya tenga.
+-- página y título, y respeta el orden y el valor de "visible" que ya tenga
+-- (los dos se cambian desde el panel, en "Secciones de la web").
 
 insert into public.informacion_general (pagina, clave, titulo, orden, visible) values
   ('index.html', 'index.bienvenida', 'Bienvenida y acceso', 1, true),
@@ -84,8 +85,7 @@ insert into public.informacion_general (pagina, clave, titulo, orden, visible) v
   ('valores.html', 'valores.grupo4', 'Valores 8 a 10', 5, true)
 on conflict (clave) do update set
   pagina = excluded.pagina,
-  titulo = excluded.titulo,
-  orden  = excluded.orden;
+  titulo = excluded.titulo;
 
 -- Las filas de texto que ya existieran (sin página asignada) quedan
 -- siempre visibles para que nada desaparezca por accidente.

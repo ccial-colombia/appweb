@@ -84,15 +84,14 @@ create policy "contenido admin total"
 -- ---------- Sección "Anuncios" de inicio.html ----------
 -- La sección se puede ocultar desde "Secciones de la web" y su título se
 -- edita en "Contenido de secciones". Si la clave ya existe solo se
--- actualizan página, título y orden (se respeta "visible").
+-- actualizan página y título (se respetan "orden" y "visible").
 
 insert into public.informacion_general (pagina, clave, titulo, orden, visible) values
   ('inicio.html', 'inicio.anuncios', 'Anuncios', 5, true),
   ('inicio.html', 'inicio.anuncios_titulo', 'Anuncios · título', 5, true)
 on conflict (clave) do update set
   pagina = excluded.pagina,
-  titulo = excluded.titulo,
-  orden  = excluded.orden;
+  titulo = excluded.titulo;
 
 insert into public.contenido_secciones (seccion_clave, contenido) values
   ('inicio.anuncios_titulo', '<p><strong>Anuncios</strong></p>')
