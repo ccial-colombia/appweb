@@ -1,5 +1,7 @@
 /* El Punto: revista virtual (elpunto.html y articulo.html).
-   Las tarjetas y el artículo los arma assets/js/elpunto.js con los datos de la tabla "articulos". */
+   Las tarjetas y el artículo los arma assets/js/elpunto.js con los datos de la tabla "articulos".
+   Los testimonios usan el mismo diseño (comunidad.html y testimonio.html, con
+   assets/js/testimonios.js): ver "Testimonios" al final. */
 
 /* ---------- Encabezado: logo e introducción ----------
    La sección y el logo usan los estilos de la bienvenida de CampaTienda
@@ -242,9 +244,104 @@ body.ep-pagina-articulo {
   height: auto;
 }
 
+/* Botón para volver a la lista: arriba (antes del artículo) y abajo (al final). */
 .ep-volver {
   margin-top: 1.5rem;
   text-align: center;
+}
+
+.ep-volver.arriba {
+  margin: 0 0 1rem;
+  text-align: left;
+}
+
+.ep-boton-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: 999px;
+  background: #045e5c;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(4, 94, 92, 0.25);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ep-boton-volver:hover,
+.ep-boton-volver:focus-visible {
+  background: #067572;
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(4, 94, 92, 0.3);
+  transform: translateY(-1px);
+}
+
+.ep-boton-volver span {
+  line-height: 1; /* la flecha */
+}
+
+/* ---------- Testimonios (comunidad.html y testimonio.html) ---------- */
+
+/* Logo del sitio (el mismo del menú, global.logo en "Imágenes del sitio"): es blanco,
+   así que va sobre el verde del menú. */
+.ep-logo-sitio {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 1.5rem;
+  padding: 0.9rem 1.75rem;
+  border-radius: 12px;
+  background: #045e5c;
+  box-shadow: 0 2px 10px rgba(4, 94, 92, 0.2);
+}
+
+.ep-logo-sitio img {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.tt-comillas {
+  display: block;
+  height: 2.4rem;
+  font-family: Georgia, serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: #045e5c;
+  opacity: 0.35;
+}
+
+.tt-resumen {
+  font-style: italic;
+}
+
+/* El nombre en la tarjeta es un h3 (para lectores de pantalla) con el aspecto del autor de un artículo. */
+.tt-nombre-tarjeta {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+}
+
+.tt-cabecera {
+  margin-top: 0.25rem;
+}
+
+.tt-cabecera .ep-autor-foto {
+  width: 84px;
+  height: 84px;
+}
+
+.tt-nombre {
+  margin: 0 0 0.25rem;
+}
+
+.tt-cabecera .ep-autor-rol {
+  font-size: 0.95rem;
 }
 
 @media (max-width: 575px) {
@@ -258,5 +355,10 @@ body.ep-pagina-articulo {
 
   .ep-articulo-titulo {
     font-size: 1.7rem;
+  }
+
+  .tt-cabecera .ep-autor-foto {
+    width: 64px;
+    height: 64px;
   }
 }

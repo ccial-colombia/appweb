@@ -34,6 +34,7 @@
 	<link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=an1116">
 	<link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=an1116" type="text/css">
 	<link rel="stylesheet" href="assets/css/contenido.css">
+	<link rel="stylesheet" href="assets/css/elpunto.css">
 
 
     <script src="assets/js/secciones.js"></script>
@@ -257,9 +258,10 @@
 					</h3>
 				</div>
 			</div>
-			<div class="row" id="testimonios-grid">
-				<!-- Se llenará desde la base de datos -->
-			</div>
+			<!-- Tarjetas con el diseño de los artículos de El Punto: las arma
+			     assets/js/testimonios.js con la tabla "testimonios" (admin.html > Testimonios). -->
+			<p id="tt-estado" class="ep-estado" role="status">Cargando testimonios…</p>
+			<div class="row g-4 justify-content-center" id="testimonios-grid"></div>
 		</div>
 	</section>
 
@@ -308,6 +310,7 @@
 	<script src="assets/masonry/masonry.pkgd.min.js"></script>
 	<script src="assets/imagesloaded/imagesloaded.pkgd.min.js"></script>
 	<script src="assets/theme/js/script.js"></script>
+	<script src="assets/js/testimonios.js"></script>
 
 	<script>
 		// Carga el contenido de la página desde la base de datos en Supabase,
@@ -318,42 +321,6 @@
 			const div = document.createElement("div");
 			div.textContent = texto == null ? "" : String(texto);
 			return div.innerHTML;
-		}
-
-		function obtenerTextoPlano(html) {
-			const div = document.createElement("div");
-			div.innerHTML = html || "";
-			return div.textContent || "";
-		}
-
-		// Trunca HTML con formato (negrita, cursiva, etc.) sin dejar etiquetas
-		// a medio cerrar, cortando en el límite de caracteres de texto visible.
-		function truncarHtml(html, limite) {
-			const contenedor = document.createElement("div");
-			contenedor.innerHTML = html || "";
-			let restante = limite;
-
-			function recorrer(nodo) {
-				const hijos = Array.from(nodo.childNodes);
-				for (const hijo of hijos) {
-					if (restante <= 0) {
-						nodo.removeChild(hijo);
-						continue;
-					}
-					if (hijo.nodeType === Node.TEXT_NODE) {
-						if (hijo.textContent.length > restante) {
-							hijo.textContent = hijo.textContent.substring(0, restante) + "…";
-							restante = 0;
-						} else {
-							restante -= hijo.textContent.length;
-						}
-					} else if (hijo.nodeType === Node.ELEMENT_NODE) {
-						recorrer(hijo);
-					}
-				}
-			}
-			recorrer(contenedor);
-			return contenedor.innerHTML;
 		}
 
 		// Convierte el contacto en enlace si es correo o URL.
@@ -425,52 +392,12 @@
 			}).join("");
 		}
 
-		async function cargarTestimonios() {
-			const grid = document.getElementById("testimonios-grid");
-			if (!grid) return;
-
-			const { data, error } = await supabaseClient
-				.from("testimonios")
-				.select("id, nombre, rol, mensaje, foto_url")
-				.eq("visible", true)
-				.order("orden", { ascending: true });
-
-			if (error || !data || data.length === 0) {
-				grid.innerHTML = '<div class="col-12"><p class="mbr-fonts-style display-7 align-center">' +
-					(error ? "No se pudieron cargar los testimonios." : "Aún no hay testimonios registrados.") +
-					"</p></div>";
-				return;
-			}
-			const LIMITE_CARACTERES = 255;
-			grid.innerHTML = data.map(function (t) {
-				const mensaje = t.mensaje || "";
-				const esLargo = obtenerTextoPlano(mensaje).length > LIMITE_CARACTERES;
-				const htmlMostrado = esLargo ? truncarHtml(mensaje, LIMITE_CARACTERES) : mensaje;
-				const enlaceLeerMas = esLargo
-					? ' <a href="testimonio.html?id=' + encodeURIComponent(t.id) + '">leer más...</a>'
-					: "";
-				const foto = t.foto_url
-					? '<img src="' + escaparHtml(t.foto_url) + '" alt="Foto de ' + escaparHtml(t.nombre) +
-					  '" class="rounded-circle mb-3" style="width:80px;height:80px;object-fit:cover;">'
-					: "";
-				return '<div class="col-12 col-md-6 col-lg-4 mb-4">' +
-					'<div class="card h-100 shadow-sm"><div class="card-body d-flex flex-column align-items-center">' +
-					foto +
-					'<div class="mbr-text mbr-fonts-style display-7 w-100">' + htmlMostrado + enlaceLeerMas + '</div>' +
-					'<p class="mbr-fonts-style display-7 mb-0 mt-auto text-center"><strong>' + escaparHtml(t.nombre) + "</strong>" +
-					(t.rol ? '<br><small>' + escaparHtml(t.rol) + "</small>" : "") +
-					"</p></div></div></div>";
-			}).join("");
-		}
-
 		// Si no se puede conectar con la base de datos, se avisa en cada bloque.
 		function mostrarErrorConexion() {
 			[["tbody-fincas", 5], ["tbody-transporte", 3], ["tbody-cocina", 3]].forEach(function (par) {
 				const tbody = document.getElementById(par[0]);
 				if (tbody) tbody.innerHTML = '<tr><td colspan="' + par[1] + '" class="text-center">No se pudo cargar la información.</td></tr>';
 			});
-			const grid = document.getElementById("testimonios-grid");
-			if (grid) grid.innerHTML = '<div class="col-12"><p class="mbr-fonts-style display-7 align-center">No se pudieron cargar los testimonios.</p></div>';
 		}
 
 		obtenerClienteSupabase()
@@ -479,7 +406,6 @@
 				cargarFincas();
 				cargarTabla("transporte", "tbody-transporte");
 				cargarTabla("cocina", "tbody-cocina");
-				cargarTestimonios();
 			})
 			.catch(mostrarErrorConexion);
 	</script>

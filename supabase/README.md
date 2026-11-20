@@ -151,7 +151,7 @@ cada grupo (`GRUPOS_ESTILO`):
 |---|---|
 | `titulos` | `mbr-section-title`, `titulo-cci-al`, `ep-titulo`, `ep-articulo-titulo`, `ct-titulo`, `anuncios-titulo` |
 | `subtitulos` | `mbr-section-subtitle`, `item-subtitle`, `rd-grupo-titulo` |
-| `tarjetas` | `card-title`, `item-title`, `ep-tarjeta-titulo`, `ct-producto-nombre`, `rd-nombre` |
+| `tarjetas` | `card-title`, `item-title`, `ep-tarjeta-titulo`, `ct-producto-nombre`, `rd-nombre`, `vd-titulo` |
 
 - Tipo de letra: uno de la lista del panel (`FUENTES_TITULOS` en `admin.html`, la misma que
   `FUENTES` en `secciones.js`). Las de Google Fonts se cargan solo si se eligen, y la pagina

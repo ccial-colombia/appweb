@@ -359,7 +359,7 @@
     var GRUPOS_ESTILO = [
         { clave: "titulos", selector: ".mbr-section-title, .titulo-cci-al, .ep-titulo, .ep-articulo-titulo, .ct-titulo, .anuncios-titulo" },
         { clave: "subtitulos", selector: ".mbr-section-subtitle, .item-subtitle, .rd-grupo-titulo" },
-        { clave: "tarjetas", selector: ".card-title, .item-title, .ep-tarjeta-titulo, .ct-producto-nombre, .rd-nombre" }
+        { clave: "tarjetas", selector: ".card-title, .item-title, .ep-tarjeta-titulo, .ct-producto-nombre, .rd-nombre, .vd-titulo" }
     ];
 
     // Tipos de letra que ofrece el panel (la misma lista que FUENTES_TITULOS en admin.html).

@@ -34,6 +34,7 @@
     <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css?v=an1116">
     <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css?v=an1116" type="text/css">
     <link rel="stylesheet" href="assets/css/descargables.css">
+    <link rel="stylesheet" href="assets/css/videos.css">
 
 
 
@@ -188,7 +189,8 @@
 
         <div class="container">
 
-            <div class="row mt-4" id="videos-grid">
+            <!-- Tarjetas de video (assets/css/videos.css): las arma el script del final de la página. -->
+            <div class="row g-4 mt-2 mb-4 justify-content-center" id="videos-grid">
                 <div class="col-12">
                     <p class="mbr-text mbr-fonts-style display-7 align-center">Cargando videos...</p>
                 </div>
@@ -316,24 +318,28 @@
                 return;
             }
 
+            // Tarjeta por video: reproductor horizontal (16:9) arriba y, debajo, título y
+            // descripción. Los Shorts de YouTube se muestran verticales. El iframe no lleva la
+            // clase mbr-embedded-video para que el script del tema no le cambie la altura.
             grid.innerHTML = data.map(function (video) {
                 const embed = urlEmbebida(video.url);
                 const titulo = escaparHtml(video.titulo);
+                const vertical = /youtube\.com\/shorts\//i.test(video.url || "");
                 const reproductor = embed
-                    ? '<div class="video-wrapper"><iframe class="mbr-embedded-video" src="' + escaparHtml(embed) +
-                      '" width="1280" height="720" frameborder="0" allowfullscreen' +
+                    ? '<div class="vd-marco' + (vertical ? " vertical" : "") + '"><iframe src="' + escaparHtml(embed) +
+                      '" loading="lazy" allowfullscreen' +
                       ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
                       ' referrerpolicy="strict-origin-when-cross-origin" title="' + titulo + '"></iframe></div>'
-                    : '<p class="mbr-text mbr-fonts-style display-7"><a href="' + escaparHtml(video.url) +
-                      '" target="_blank" rel="noopener">Ver video</a></p>';
-                const descripcion = video.descripcion
-                    ? '<p class="mbr-text mbr-fonts-style display-7">' + escaparHtml(video.descripcion) + "</p>"
                     : "";
-                return '<div class="col-12 col-md-6 video-block mb-4">' +
+                const enlace = embed ? ""
+                    : '<a class="vd-enlace" href="' + escaparHtml(video.url) + '" target="_blank" rel="noopener">Ver video</a>';
+                const descripcion = video.descripcion
+                    ? '<p class="vd-descripcion">' + escaparHtml(video.descripcion) + "</p>"
+                    : "";
+                return '<div class="col-12 col-md-6"><article class="vd-tarjeta">' +
                     reproductor +
-                    '<p class="mbr-text pt-2 mbr-fonts-style display-4">' + titulo + "</p>" +
-                    descripcion +
-                    "</div>";
+                    '<div class="vd-cuerpo"><h4 class="vd-titulo">' + titulo + "</h4>" + descripcion + enlace + "</div>" +
+                    "</article></div>";
             }).join("");
         }
 

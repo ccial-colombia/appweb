@@ -69,7 +69,7 @@ insert into public.estilos_titulos (clave, nombre, descripcion, orden) values
   ('subtitulos', 'Subtítulos',
    'Los textos que acompañan a un título (ej: "¡Solo para nuestra familia CCI AL!", la descripción corta de cada curso y los grupos de Recursos descargables).', 2),
   ('tarjetas', 'Títulos de tarjetas',
-   'Los títulos dentro de tarjetas y listas: Visión y Misión, normas, valores, juegos de la Enciclopedia, talleres, productos, recursos descargables y artículos de El Punto.', 3)
+   'Los títulos dentro de tarjetas y listas: Visión y Misión, normas, valores, juegos de la Enciclopedia, talleres, productos, videos, recursos descargables y artículos de El Punto.', 3)
 on conflict (clave) do update set
   nombre      = excluded.nombre,
   descripcion = excluded.descripcion,

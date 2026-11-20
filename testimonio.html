@@ -8,15 +8,26 @@
     <title>Testimonio | CCI AL/Colombia</title>
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/theme/css/style.css">
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css?family=Inter:100,200,300,400,500,600,700,800,900&display=swap" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Inter:100,200,300,400,500,600,700,800,900&display=swap">
+    </noscript>
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,700;1,400;1,700&display=swap&display=swap"
+        as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,700;1,400;1,700&display=swap&display=swap">
+    </noscript>
     <link rel="stylesheet" href="assets/css/contenido.css">
+    <link rel="stylesheet" href="assets/css/elpunto.css">
     <script src="assets/js/secciones.js"></script>
-    <style>
-        body { background: #f4f5f7; }
-        .contenedor-testimonio { max-width: 700px; margin: 3rem auto; padding: 0 1rem; }
-    </style>
 </head>
 
-<body>
+<body class="ep-pagina-articulo">
 
     <script>
         if (sessionStorage.getItem("auth") !== "true") {
@@ -24,70 +35,25 @@
         }
     </script>
 
-    <div class="contenedor-testimonio">
-        <div class="card shadow-sm">
-            <div class="card-body p-4" id="contenido-testimonio">
-                <p class="text-muted">Cargando testimonio...</p>
-            </div>
+    <!-- Un testimonio (testimonio.html?id=...), con el diseño de los artículos de El Punto.
+         Lo arma assets/js/testimonios.js con la tabla "testimonios" de Supabase
+         (admin.html > Testimonios). Arriba va el logo del sitio (global.logo). -->
+    <main class="ep-articulo-contenedor">
+        <a href="inicio.html" class="ep-logo-sitio">
+            <img data-imagen="global.logo" src="assets/images/logo-blan-1-299x95.png" alt="CCI AL/Colombia">
+        </a>
+        <div class="ep-volver arriba">
+            <a href="comunidad.html#seccion-testimonios" class="ep-boton-volver"><span aria-hidden="true">&larr;</span> Volver a Testimonios</a>
         </div>
-        <div class="text-center mt-3">
-            <a href="comunidad.html" class="text-primary">&larr; Volver a Comunidad</a>
+        <article class="ep-articulo" id="tt-testimonio">
+            <p class="ep-estado" role="status">Cargando testimonio…</p>
+        </article>
+        <div class="ep-volver">
+            <a href="comunidad.html#seccion-testimonios" class="ep-boton-volver"><span aria-hidden="true">&larr;</span> Volver a Testimonios</a>
         </div>
-    </div>
+    </main>
 
-    <script>
-        // Usa el cliente de Supabase compartido de assets/js/secciones.js.
-        function escaparHtml(texto) {
-            const div = document.createElement("div");
-            div.textContent = texto == null ? "" : String(texto);
-            return div.innerHTML;
-        }
-
-        async function cargarTestimonio() {
-            const contenedor = document.getElementById("contenido-testimonio");
-            const parametros = new URLSearchParams(window.location.search);
-            const id = parametros.get("id");
-
-            if (!id) {
-                contenedor.innerHTML = '<p class="text-danger mb-0">No se especificó ningún testimonio.</p>';
-                return;
-            }
-
-            let data = null, error = null;
-            try {
-                const supabaseClient = await obtenerClienteSupabase();
-                ({ data, error } = await supabaseClient
-                    .from("testimonios")
-                    .select("nombre, rol, mensaje, foto_url")
-                    .eq("id", id)
-                    .eq("visible", true)
-                    .maybeSingle());
-            } catch (e) {
-                error = e;
-            }
-
-            if (error || !data) {
-                contenedor.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el testimonio.</p>';
-                return;
-            }
-
-            const encabezado =
-                '<div class="d-flex align-items-center mb-4">' +
-                (data.foto_url
-                    ? '<img src="' + escaparHtml(data.foto_url) + '" alt="Foto de ' + escaparHtml(data.nombre) +
-                      '" class="rounded-circle flex-shrink-0" style="width:90px;height:90px;object-fit:cover;">'
-                    : "") +
-                '<div class="' + (data.foto_url ? "ms-3" : "") + ' text-start">' +
-                '<h5 class="mb-0">' + escaparHtml(data.nombre) + "</h5>" +
-                (data.rol ? '<small class="text-muted">' + escaparHtml(data.rol) + "</small>" : "") +
-                "</div></div>";
-
-            contenedor.innerHTML = encabezado +
-                '<div class="mbr-text mbr-fonts-style" style="font-size:1.15rem;">' + (data.mensaje || "") + "</div>";
-        }
-
-        cargarTestimonio();
-    </script>
+    <script src="assets/js/testimonios.js"></script>
 </body>
 
 </html>

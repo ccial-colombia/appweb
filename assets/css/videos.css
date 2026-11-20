@@ -1,0 +1,86 @@
+/* Equipados > 2. Videos exclusivos (equipados.html).
+   Las tarjetas las arma el script de equipados.html con los datos de la tabla "videos"
+   (admin.html > Videos). Mismo estilo que las tarjetas de Recursos descargables. */
+
+.vd-tarjeta {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(5, 56, 107, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.vd-tarjeta:hover {
+  box-shadow: 0 8px 24px rgba(5, 56, 107, 0.14);
+}
+
+/* Video horizontal (16:9): el iframe ocupa todo el marco. La proporción la da el CSS,
+   no el script del tema, así se ve bien desde que carga la página. */
+.vd-marco {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+}
+
+.vd-marco iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* YouTube Shorts (verticales, 9:16): centrados y de ancho limitado para que no queden tan altos. */
+.vd-marco.vertical {
+  aspect-ratio: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.vd-marco.vertical iframe {
+  position: static;
+  width: min(100%, 260px);
+  height: auto;
+  aspect-ratio: 9 / 16;
+}
+
+.vd-cuerpo {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.vd-titulo {
+  margin: 0;
+  font-family: 'Jost', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #05386b;
+}
+
+/* pre-line: respeta los saltos de línea escritos en el panel. */
+.vd-descripcion {
+  margin: 0.5rem 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #444444;
+  white-space: pre-line;
+}
+
+/* Enlace que no es de YouTube ni de Vimeo: no se puede insertar, se abre aparte. */
+.vd-enlace {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #045e5c;
+}
+
+.vd-enlace::after {
+  content: " \2197";
+}
